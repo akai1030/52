@@ -7,7 +7,6 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    /* CSS 與原本完全相同 */
     :root { 
       --brand-yellow: #EFC050; --brand-green: #9CB071; --brand-pink: #F7A8B8;
       --bg-main: #FAFAFA; --text-dark: #555; 
@@ -116,7 +115,9 @@
     .hist-item { padding: 12px 5px; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; }
     .hist-act { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 3px; }
     .hist-time { font-size: 11px; color: #aaa; }
-    .hist-staff { font-size: 11px; background: #f0f0f0; padding: 2px 8px; border-radius: 8px; color: #888; }
+    .hist-staff { font-size: 11px; background: #f0f0f0; padding: 2px 8px; border-radius: 8px; color: #888; margin-left: 5px;}
+    .hist-money { font-size: 13px; font-weight: bold; color: var(--brand-yellow); background: #FFF8E1; padding: 2px 6px; border-radius: 5px; margin-left: auto; margin-right: 5px;}
+    
     .act-type-plus { color: var(--brand-green); }
     .act-type-minus { color: #E57373; }
     .act-type-redeem { color: var(--brand-pink); }
@@ -211,7 +212,7 @@
   </div>
 
   <script>
-    // ★★★★ 請在這裡填入你的 Apps Script 部署網址 ★★★★
+    // ★★★★ 請在這裡填入你的 Apps Script 新部署網址 ★★★★
     const API_URL = "https://script.google.com/macros/s/AKfycbwsfPMn54aqd3u-4SHkGmdfS-drw8MLNE-3lVq1XP-pCPSOW1ZxwDvTnd-85uQpuuc/exec"; 
     // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
@@ -233,7 +234,7 @@
     let CURRENT_PHONE = "";
     let POLLING_TIMER = null; 
 
-    // ★ 新增：統一的 API 呼叫函式 (取代 google.script.run)
+    // API 呼叫函式
     async function callApi(action, params = {}) {
       if(API_URL.includes("你的ID")) {
         Swal.fire('設定錯誤', '請記得去 index.html 修改 API_URL 喔！', 'error');
@@ -245,13 +246,24 @@
         const response = await fetch(API_URL, {
           method: "POST",
           body: JSON.stringify(payload),
-          headers: { "Content-Type": "text/plain;charset=utf-8" }, // 使用 text/plain 避免 CORS preflight 問題
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, 
         });
         const result = await response.json();
         return result;
       } catch (error) {
         console.error("API Error:", error);
         return { success: false, msg: "連線錯誤，請稍後再試" };
+      }
+    }
+
+    // 本地極速更新小幫手
+    function updateLocalMember(phone, newPoints, newRedeemed, isFirstUsed = null) {
+      let target = ALL_MEMBERS.find(m => m.phone === phone);
+      if (target) {
+        target.current = newPoints;
+        target.redeemed = newRedeemed;
+        if(isFirstUsed !== null) target.isFirstUsed = isFirstUsed;
+        updateAdminUI(ALL_MEMBERS, document.getElementById('admRedeemTotal').innerText); 
       }
     }
 
@@ -265,15 +277,13 @@
     function startPolling() {
       if(POLLING_TIMER) clearInterval(POLLING_TIMER);
       POLLING_TIMER = setInterval(async () => {
-        if(document.getElementById('view-user').classList.contains('active') && CURRENT_PHONE) {
-          const res = await callApi('getMemberData', { phone: CURRENT_PHONE });
-          if(res.success) renderUserCard(res.name, res.current, res.redeemed);
-        }
+        // 使用者模式不需頻繁輪詢
         if(document.getElementById('view-admin').classList.contains('active') && GLOBAL_PASS) {
+          // 後台模式才需要更新列表，但也可以拉長秒數
           const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
           if(r.success) { ALL_MEMBERS = r.list; updateAdminUI(r.list, r.totalRedeemed); }
         }
-      }, 15000); // 延長到 15秒避免過度請求
+      }, 20000); 
     }
 
     function showView(viewId) {
@@ -310,7 +320,7 @@
         CURRENT_PHONE = p;
         renderUserCard(res.name, res.current, res.redeemed);
         showView('view-user');
-        startPolling(); 
+        // startPolling(); // 使用者模式暫時關閉輪詢以節省效能
       } else {
         Swal.fire({ icon: 'error', title: '找不到會員', text: '請先註冊會員喔！', confirmButtonText: '去註冊', confirmButtonColor: '#EFC050' }).then(r => { if(r.isConfirmed) openRegister(); });
       }
@@ -490,8 +500,7 @@
        if(r.success) {
          playSound('success');
          Swal.fire({ icon: 'success', title: `成功發送首購禮 (+5點)`, timer: 1500, showConfirmButton: false });
-         const res = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
-         if(res.success){ ALL_MEMBERS=res.list; updateAdminUI(res.list, res.totalRedeemed); }
+         updateLocalMember(phone, r.current, r.redeemed, true);
        } else {
          playSound('error'); Swal.fire('發送失敗', r.msg, 'error');
        }
@@ -511,18 +520,27 @@
 
     window.doStampRange = async function(phone, multiplier) {
       let val = Number(document.getElementById('rangeInput').value);
+      // ★ 修改：抓取金額輸入框的值
+      let moneyVal = document.getElementById('moneyInput').value; 
       let finalAmount = val * multiplier;
       let actionText = multiplier > 0 ? "增加" : "扣除";
       
       Swal.close(); showLoading();
-      const r = await callApi('addStamp', { password: GLOBAL_PASS, phone: phone, amount: finalAmount });
+      
+      // ★ 修改：傳送 money 參數
+      const r = await callApi('addStamp', { 
+        password: GLOBAL_PASS, 
+        phone: phone, 
+        amount: finalAmount, 
+        money: moneyVal 
+      });
+      
       hideLoading();
 
       if(r.success) {
         playSound('success'); 
         Swal.fire({ icon: 'success', title: `成功${actionText} ${val} 點`, timer: 1000, showConfirmButton: false });
-        const res = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
-        if(res.success){ ALL_MEMBERS=res.list; updateAdminUI(res.list, res.totalRedeemed); }
+        updateLocalMember(phone, r.current, r.redeemed); 
       } else { 
         playSound('error'); Swal.fire('操作失敗', r.msg, 'error'); 
       }
@@ -539,8 +557,7 @@
 
         if(r.success) {
           playSound('redeem'); Swal.fire('兌換成功', '', 'success');
-          const res = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
-          if(res.success){ ALL_MEMBERS=res.list; updateAdminUI(res.list, res.totalRedeemed); }
+          updateLocalMember(phone, r.current, r.redeemed);
         } else { playSound('error'); Swal.fire('失敗', r.msg, 'error'); }
       }
     }
@@ -561,7 +578,22 @@
             if(h.action.includes('蓋章') || h.action.includes('首次')) typeClass = 'act-type-plus';
             if(h.action.includes('扣點')) typeClass = 'act-type-minus';
             if(h.action.includes('兌換')) typeClass = 'act-type-redeem';
-            html += `<div class="hist-item"><div><div class="hist-act ${typeClass}">${h.action}</div><div class="hist-time">${h.date}</div></div><div class="hist-staff">${h.staff}</div></div>`;
+            
+            // ★ 修改：如果有金額，顯示金額標籤
+            let moneyTag = "";
+            if(h.money && h.money > 0) {
+              moneyTag = `<div class="hist-money">$${h.money}</div>`;
+            }
+
+            html += `
+              <div class="hist-item">
+                <div>
+                  <div class="hist-act ${typeClass}">${h.action}</div>
+                  <div class="hist-time">${h.date}</div>
+                </div>
+                ${moneyTag}
+                <div class="hist-staff">${h.staff}</div>
+              </div>`;
           });
           html += `</div>`;
         }
@@ -586,7 +618,6 @@
 
       if(res.isConfirmed) {
         showLoading();
-        // 如果是後台模式，傳入當前管理員密碼
         const currentPass = isAdminMode ? GLOBAL_PASS : null;
         const r = await callApi('registerMember', { password: currentPass, name: res.value[0], phone: res.value[1] });
         hideLoading();
