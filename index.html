@@ -460,7 +460,7 @@
               </div>
 
               <div class="range-wrap">
-                <input type="range" id="rangeInput" min="1" max="20" value="1" oninput="syncVal(this.value)">
+                <input type="range" id="rangeInput" min="0" max="20" value="1" oninput="syncVal(this.value)">
               </div>
             </div>
 
@@ -507,9 +507,10 @@
     }
 
     window.calcPoints = function(money) {
-      if(!money) return;
+      if(!money) { syncVal(0); return; } // ★ 修改：沒填就是 0
       let pts = Math.floor(money / 100);
-      if(pts < 1) pts = 1; if(pts > 20) pts = 20; 
+      // ★ 修改：移除 "小於1則設為1" 的限制
+      if(pts > 20) pts = 20; 
       syncVal(pts);
     }
     
@@ -520,14 +521,12 @@
 
     window.doStampRange = async function(phone, multiplier) {
       let val = Number(document.getElementById('rangeInput').value);
-      // ★ 修改：抓取金額輸入框的值
       let moneyVal = document.getElementById('moneyInput').value; 
       let finalAmount = val * multiplier;
       let actionText = multiplier > 0 ? "增加" : "扣除";
       
       Swal.close(); showLoading();
       
-      // ★ 修改：傳送 money 參數
       const r = await callApi('addStamp', { 
         password: GLOBAL_PASS, 
         phone: phone, 
@@ -575,11 +574,10 @@
           html = `<div class="hist-list">`;
           res.history.forEach(h => {
             let typeClass = '';
-            if(h.action.includes('蓋章') || h.action.includes('首次')) typeClass = 'act-type-plus';
+            if(h.action.includes('蓋章') || h.action.includes('首次') || h.action.includes('消費')) typeClass = 'act-type-plus';
             if(h.action.includes('扣點')) typeClass = 'act-type-minus';
             if(h.action.includes('兌換')) typeClass = 'act-type-redeem';
             
-            // ★ 修改：如果有金額，顯示金額標籤
             let moneyTag = "";
             if(h.money && h.money > 0) {
               moneyTag = `<div class="hist-money">$${h.money}</div>`;
