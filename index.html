@@ -574,22 +574,29 @@
           html = `<div class="hist-list">`;
           res.history.forEach(h => {
             let typeClass = '';
-            if(h.action.includes('蓋章') || h.action.includes('首次') || h.action.includes('消費')) typeClass = 'act-type-plus';
-            if(h.action.includes('扣點')) typeClass = 'act-type-minus';
+            // 讓 "消費紀錄(+0)" 也顯示為綠色
+            if(h.action.includes('蓋章') || h.action.includes('首次') || h.action.includes('消費') || h.action.includes('增加')) typeClass = 'act-type-plus';
+            if(h.action.includes('扣點') || h.action.includes('扣除')) typeClass = 'act-type-minus';
             if(h.action.includes('兌換')) typeClass = 'act-type-redeem';
             
-            let moneyTag = "";
+            // ★★★ 格式優化：消費$560 蓋章(+5) ★★★
+            let displayAction = h.action;
             if(h.money && h.money > 0) {
-              moneyTag = `<div class="hist-money">$${h.money}</div>`;
+                if(displayAction.includes('消費紀錄')) {
+                     // 如果是 0 點，只顯示金額
+                     displayAction = `消費$${h.money}`;
+                } else {
+                     // 否則顯示 金額 + 動作
+                     displayAction = `消費$${h.money} ${displayAction}`;
+                }
             }
 
             html += `
               <div class="hist-item">
                 <div>
-                  <div class="hist-act ${typeClass}">${h.action}</div>
+                  <div class="hist-act ${typeClass}">${displayAction}</div>
                   <div class="hist-time">${h.date}</div>
                 </div>
-                ${moneyTag}
                 <div class="hist-staff">${h.staff}</div>
               </div>`;
           });
