@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>無貳良品集點卡</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* CSS 與原本完全相同 */
+    :root { 
+      --brand-yellow: #EFC050; --brand-green: #9CB071; --brand-pink: #F7A8B8;
+      --bg-main: #FAFAFA; --text-dark: #555; 
+    }
+    body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg-main); margin: 0; padding: 20px; color: var(--text-dark); overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+
+    .view-section { display: none; min-height: 90vh; flex-direction: column; align-items: center; width: 100%; max-width: 500px; margin: 0 auto;}
+    .view-section.active { display: flex; }
+
+    h2 { margin: 10px 0 5px 0; letter-spacing: 2px; font-size: 24px; font-weight: 500; text-align: center;}
+    .subtitle { color: #999; font-size: 13px; margin-bottom: 30px; letter-spacing: 1px; font-weight: 300; text-align: center;}
+    
+    input { 
+      width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 25px; 
+      font-size: 16px; text-align: center; margin-bottom: 15px; 
+      background: #fff; color: #555; transition: 0.3s; box-sizing: border-box; font-family: 'Noto Sans TC';
+    }
+    input:focus { outline: none; border-color: var(--brand-yellow); box-shadow: 0 0 0 4px rgba(239, 192, 80, 0.1); }
+    
+    button { width: 100%; padding: 15px; border: none; border-radius: 25px; font-size: 16px; font-weight: 500; cursor: pointer; transition: 0.2s; font-family: 'Noto Sans TC'; margin-bottom: 15px;}
+    button:active { transform: scale(0.98); }
+    
+    .btn-yellow { background-color: var(--brand-yellow); color: white; box-shadow: 0 8px 20px -5px rgba(239, 192, 80, 0.4); }
+    .btn-green { background-color: var(--brand-green); color: white; box-shadow: 0 8px 20px -5px rgba(156, 176, 113, 0.4); }
+    .btn-pink { background-color: var(--brand-pink); color: white; box-shadow: 0 8px 20px -5px rgba(247, 168, 184, 0.4); }
+    .btn-outline { background: white; border: 1px solid #ddd; color: #888; }
+    .btn-admin { background: white; color: var(--brand-green); border: 1px solid var(--brand-green); font-size: 14px; padding: 12px; }
+    .btn-register { background-color: white; border: 2px solid var(--brand-yellow); color: var(--brand-yellow); }
+
+    .home-card { background: white; padding: 50px 30px; border-radius: 30px; box-shadow: 0 15px 35px -10px rgba(0,0,0,0.08); width: 100%; box-sizing: border-box; text-align: center;}
+    .divider { margin: 25px 0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 12px; font-weight: 300; }
+    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #eee; margin: 0 10px; }
+
+    .rule-link { margin-top: 10px; font-size: 13px; color: #aaa; text-decoration: underline; cursor: pointer; display: block;}
+
+    /* User Card */
+    .card-display { background: white; width: 100%; padding: 30px 25px; border-radius: 35px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); position: relative; overflow: hidden; box-sizing: border-box; margin-bottom: 20px;}
+    .card-display::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(to right, var(--brand-pink), var(--brand-yellow), var(--brand-green)); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;}
+    .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; justify-items: center;}
+    .stamp { width: 40px; height: 40px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #CCC; transition: 0.3s; }
+    .stamp.active { background: var(--brand-pink); color: white; transform: scale(1.1); box-shadow: 0 5px 15px rgba(247, 168, 184, 0.4);}
+    .stamp.active.anim { animation: pop 0.5s ease; }
+    @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.1); opacity: 1; } }
+    
+    .coupon-wallet { background: #FFF8E1; border: 2px dashed #EFC050; border-radius: 20px; padding: 15px; margin-top: 25px; text-align: center; display: none; }
+    .coupon-count { font-size: 32px; font-weight: bold; color: #EFC050; margin: 5px 0; }
+    .btn-use-coupon { background: #EFC050; color: white; font-size: 14px; padding: 8px 20px; border-radius: 15px; width: auto; margin: 0; box-shadow: 0 4px 10px rgba(239, 192, 80, 0.3); }
+
+    /* Admin UI */
+    .admin-nav { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px;}
+    .btn-back-home { background: transparent; color: #888; border: 1px solid #eee; padding: 5px 15px; font-size: 12px; width: auto; margin: 0; border-radius: 15px;}
+    .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-bottom: 20px;}
+    .stat-box { background: white; padding: 15px; border-radius: 20px; text-align: center; border-bottom: 4px solid #eee; }
+    .stat-val { font-size: 22px; font-weight: 500; color: #333; }
+    .stat-label { font-size: 11px; color: #999; }
+    .search-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-group input { margin-bottom: 0; flex: 1; text-align: left; padding-left: 20px; }
+    
+    .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; width: 100%; padding-bottom: 80px;}
+    .m-card { background: white; border-radius: 20px; padding: 15px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; position: relative;}
+    .m-card:active { transform: scale(0.98); }
+    .m-card.has-coupon { border-color: var(--brand-pink); background: #FFFBFB; }
+    .bar-bg { height: 6px; background: #eee; border-radius: 3px; margin-top: 10px; overflow: hidden;}
+    .bar-fill { height: 100%; background: var(--brand-green); width: 0%; transition: 0.3s; }
+    .m-card.has-coupon .bar-fill { background: var(--brand-pink); }
+    .coupon-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; background: var(--brand-pink); color: white; padding: 2px 8px; border-radius: 8px; display: none; }
+    .m-card.has-coupon .coupon-badge { display: block; }
+
+    .fab { position: fixed; bottom: 30px; right: 30px; width: 55px; height: 55px; background: var(--brand-green); color: white; border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px -5px rgba(156, 176, 113, 0.5); cursor: pointer; z-index: 100;}
+
+    /* Control Panel (Popup) */
+    .ctrl-panel { text-align: center; }
+    .ctrl-info { margin-bottom: 15px; }
+    .ctrl-info .name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; }
+    .ctrl-info .detail { font-size: 13px; color: #888; }
+    
+    .ctrl-input-area { background: #f9f9f9; padding: 20px; border-radius: 20px; margin-bottom: 20px; }
+    .num-display { font-size: 48px; font-weight: bold; color: var(--brand-green); margin-bottom: 10px; line-height: 1; }
+    
+    .money-input-wrapper { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 15px; }
+    .money-input { width: 100px; padding: 5px 10px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; margin: 0; text-align: center; }
+    
+    .range-wrap { margin: 15px 0 5px 0; padding: 0 10px; }
+    input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%;
+      background: white; border: 2px solid var(--brand-green); cursor: pointer; margin-top: -10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #ddd; border-radius: 2px; }
+
+    .ctrl-actions { display: flex; gap: 10px; }
+    .btn-act-add { flex: 2; background: var(--brand-green); color: white; border-radius: 15px; padding: 12px; font-size: 15px; border:none; box-shadow: 0 4px 10px rgba(156, 176, 113, 0.3); }
+    .btn-act-sub { flex: 1; background: white; color: #E57373; border: 1px solid #E57373; border-radius: 15px; padding: 12px; font-size: 15px; }
+    .btn-act-redeem { width: 100%; margin-top: 15px; background: var(--brand-pink); color: white; border-radius: 15px; padding: 12px; border:none; font-size: 15px; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; box-shadow: 0 4px 10px rgba(247, 168, 184, 0.3);}
+    
+    /* 首購按鈕樣式 */
+    .btn-bonus { background: #FFF3E0; color: #FF9800; font-size: 14px; padding: 8px 15px; border-radius: 20px; border: 1px solid #FFE0B2; margin-bottom: 10px; cursor: pointer; width: auto; display: inline-block; transition:0.2s;}
+    .btn-bonus.used { background: #EEE; color: #AAA; border-color: #DDD; cursor: default; }
+    
+    .history-link { display: block; margin-top: 15px; color: #aaa; font-size: 12px; text-decoration: underline; cursor: pointer; }
+
+    /* History Styles */
+    .hist-header { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #555; white-space: nowrap; }
+    .hist-list { max-height: 300px; overflow-y: auto; text-align: left; border-top: 1px solid #eee; }
+    .hist-item { padding: 12px 5px; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; }
+    .hist-act { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 3px; }
+    .hist-time { font-size: 11px; color: #aaa; }
+    .hist-staff { font-size: 11px; background: #f0f0f0; padding: 2px 8px; border-radius: 8px; color: #888; }
+    .act-type-plus { color: var(--brand-green); }
+    .act-type-minus { color: #E57373; }
+    .act-type-redeem { color: var(--brand-pink); }
+
+    /* SweetAlert Override */
+    div:where(.swal2-popup) { border-radius: 30px !important; padding: 25px !important; width: 85% !important; max-width: 360px !important; } 
+    div:where(.swal2-actions) { width: 100% !important; margin: 15px 0 0 0 !important; }
+    div:where(.swal2-actions) button { border-radius: 15px !important; flex: 1 !important; margin: 0 5px !important;}
+    div:where(.swal2-html-container) { margin: 0 !important; overflow: visible !important; }
+
+    #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.98); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
+    .spin-emoji { font-size: 40px; display: inline-block; animation: spin 1.2s linear infinite; }
+    .spin-emoji:nth-child(2) { animation-delay: 0.2s; } .spin-emoji:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div id="loader">
+    <div style="display:flex; gap:10px;">
+      <span class="spin-emoji">🍋</span><span class="spin-emoji">🌿</span><span class="spin-emoji">🌸</span>
+    </div>
+    <div style="font-size:12px; color:#aaa; margin-top:15px; letter-spacing: 2px;">PROCESSING...</div>
+    <button onclick="forceStopLoading()" style="width: auto; margin-top: 30px; padding: 8px 25px; background: white; border: 1px solid #ddd; border-radius: 20px; color: #999; font-size: 13px;">✕ 取消</button>
+  </div>
+
+  <div id="view-home" class="view-section active">
+    <div class="home-card">
+      <h2 style="color:var(--brand-green);">無貳良品</h2>
+      <div class="subtitle">集點會員系統</div>
+      <input type="tel" id="homePhone" placeholder="輸入手機號碼" maxlength="10">
+      <button class="btn-yellow" onclick="userLogin()">查詢集點卡</button>
+      <button class="btn-register" onclick="openRegister()">立即註冊會員</button>
+      <div class="rule-link" onclick="showRules()">📝 查看集點規則</div>
+      <div class="divider">STAFF ONLY</div>
+      <button class="btn-admin" onclick="openAdminLogin()">工作夥伴入口</button>
+    </div>
+  </div>
+
+  <div id="view-user" class="view-section">
+    <h2 style="margin-top: 30px;">我的集點卡</h2>
+    <div class="subtitle" style="margin-bottom: 20px;">無貳良品</div>
+    <div class="card-display" id="userCard">
+      <div class="card-header">
+        <div style="font-size:18px; font-weight:500; display:flex; align-items:center;">
+          會員卡
+        </div>
+        <div style="background:#f5f5f5; color:#999; padding:4px 12px; border-radius:15px; font-size:12px;" id="uName">Name</div>
+      </div>
+      <div class="grid" id="uGrid"></div>
+      <div id="uFullMsg" style="text-align:center; margin-top:20px; display:none;">
+        <div style="color:var(--brand-pink); font-weight:500; font-size:16px; margin-bottom:5px;">🎉 已集滿 10 點！</div>
+        <div style="color:var(--brand-yellow); font-weight:bold; font-size:18px; letter-spacing:1px; border:2px dashed var(--brand-yellow); padding:10px; border-radius:15px; background:#fffdf5;">
+          獲得 9 折兌換券
+        </div>
+      </div>
+      <div id="couponWallet" class="coupon-wallet">
+        <div class="coupon-desc">✨ 可用優惠券 (可累積)</div>
+        <div class="coupon-count"><span id="uCouponCount">0</span> 張</div>
+        <button class="btn-use-coupon" onclick="userRedeem()">立即兌換折扣</button>
+      </div>
+      <div style="text-align:center; margin-top:30px; font-size:13px; color:#999;">
+        歷史使用：<span id="uRedeem" style="color:var(--brand-yellow); font-weight:500; font-size:16px; cursor:pointer; text-decoration:underline;" onclick="openHistory(CURRENT_PHONE)">0</span> 張
+      </div>
+    </div>
+    <div class="rule-link" onclick="showRules()" style="text-align:center; margin-bottom:20px;">📝 查看集點規則</div>
+    <button class="btn-outline" onclick="showView('view-home')">↺ 返回查詢</button>
+  </div>
+
+  <div id="view-admin" class="view-section">
+    <div class="admin-nav">
+      <div style="font-weight:500; display:flex; align-items:center; gap:5px;">
+        無貳後台 <span id="staffNameDisplay" style="font-size:12px; background:#E8F5E9; color:#4CAF50; padding:2px 8px; border-radius:10px;">Guest</span>
+      </div>
+      <button class="btn-back-home" onclick="logoutAdmin()">登出</button>
+    </div>
+    <div class="dashboard">
+      <div class="stat-box" style="border-color:var(--brand-pink)">
+        <div class="stat-label">優惠券累積已兌換</div>
+        <div class="stat-val" id="admRedeemTotal">0</div>
+      </div>
+      <div class="stat-box" style="border-color:var(--brand-yellow)">
+        <div class="stat-label">會員總數</div>
+        <div class="stat-val" id="admMemberTotal">0</div>
+      </div>
+    </div>
+    <div class="search-group">
+      <input type="text" id="admSearch" placeholder="🔍 搜尋會員電話/姓名..." onkeyup="filterAdminList()">
+    </div>
+    <div class="member-grid" id="admGrid"></div>
+    <div class="fab" onclick="openRegister()">＋</div>
+  </div>
+
+  <script>
+    // ★★★★ 請在這裡填入你的 Apps Script 部署網址 ★★★★
+    const API_URL = "https://script.google.com/macros/s/AKfycbwsfPMn54aqd3u-4SHkGmdfS-drw8MLNE-3lVq1XP-pCPSOW1ZxwDvTnd-85uQpuuc/exec"; 
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+    const SOUND_SUCCESS = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'); 
+    const SOUND_REDEEM = new Audio('https://actions.google.com/sounds/v1/science_fiction/scifi_laser.ogg'); 
+    const SOUND_ERROR = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); 
+
+    function playSound(type) {
+      try {
+        if(type === 'success') { SOUND_SUCCESS.currentTime = 0; SOUND_SUCCESS.play(); }
+        if(type === 'redeem') { SOUND_REDEEM.currentTime = 0; SOUND_REDEEM.play(); }
+        if(type === 'error') { SOUND_ERROR.currentTime = 0; SOUND_ERROR.play(); }
+      } catch(e) { console.log("Audio error"); }
+    }
+
+    let GLOBAL_PASS = ""; 
+    let GLOBAL_STAFF_NAME = "";
+    let ALL_MEMBERS = [];
+    let CURRENT_PHONE = "";
+    let POLLING_TIMER = null; 
+
+    // ★ 新增：統一的 API 呼叫函式 (取代 google.script.run)
+    async function callApi(action, params = {}) {
+      if(API_URL.includes("你的ID")) {
+        Swal.fire('設定錯誤', '請記得去 index.html 修改 API_URL 喔！', 'error');
+        return {success: false};
+      }
+      
+      const payload = { action: action, params: params };
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, // 使用 text/plain 避免 CORS preflight 問題
+        });
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error("API Error:", error);
+        return { success: false, msg: "連線錯誤，請稍後再試" };
+      }
+    }
+
+    function showLoading() { document.getElementById('loader').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loader').style.display = 'none'; }
+    function forceStopLoading() {
+      if(POLLING_TIMER) clearInterval(POLLING_TIMER);
+      GLOBAL_PASS = ""; hideLoading(); showView('view-home');
+    }
+
+    function startPolling() {
+      if(POLLING_TIMER) clearInterval(POLLING_TIMER);
+      POLLING_TIMER = setInterval(async () => {
+        if(document.getElementById('view-user').classList.contains('active') && CURRENT_PHONE) {
+          const res = await callApi('getMemberData', { phone: CURRENT_PHONE });
+          if(res.success) renderUserCard(res.name, res.current, res.redeemed);
+        }
+        if(document.getElementById('view-admin').classList.contains('active') && GLOBAL_PASS) {
+          const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+          if(r.success) { ALL_MEMBERS = r.list; updateAdminUI(r.list, r.totalRedeemed); }
+        }
+      }, 15000); // 延長到 15秒避免過度請求
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      window.scrollTo(0,0);
+    }
+
+    function showRules() {
+      Swal.fire({
+        title: '集點規則說明',
+        html: `
+          <div style="text-align:left; font-size:14px; line-height:1.8; color:#555;">
+            1. <b>首次消費</b>：可直接獲贈 <b>5 點</b>。<br>
+            2. <b>消費集點</b>：每消費 <b>100元</b> 可獲得 1 點。<br>
+            3. <b>集滿回饋</b>：集滿 10 點可獲得一張「9折兌換券」。<br>
+            4. <b>兌換使用</b>：兌換券可累積使用，單次消費限用一張。
+          </div>
+        `,
+        confirmButtonColor: '#EFC050',
+        confirmButtonText: '了解'
+      });
+    }
+
+    async function userLogin() {
+      let p = document.getElementById('homePhone').value.trim();
+      if(!p) return Swal.fire('請輸入手機號碼');
+      
+      showLoading();
+      const res = await callApi('getMemberData', { phone: p });
+      hideLoading();
+
+      if(res.success) {
+        CURRENT_PHONE = p;
+        renderUserCard(res.name, res.current, res.redeemed);
+        showView('view-user');
+        startPolling(); 
+      } else {
+        Swal.fire({ icon: 'error', title: '找不到會員', text: '請先註冊會員喔！', confirmButtonText: '去註冊', confirmButtonColor: '#EFC050' }).then(r => { if(r.isConfirmed) openRegister(); });
+      }
+    }
+
+    function renderUserCard(name, currentTotal, redeemed) {
+      document.getElementById('uName').innerText = name;
+      document.getElementById('uRedeem').innerText = redeemed;
+      
+      let fullCards = Math.floor(currentTotal / 10);
+      let progress = currentTotal % 10;
+      let html = '';
+      for(let i=1; i<=10; i++) {
+        let cls = (i <= progress) ? 'stamp active anim' : 'stamp';
+        let style = (i <= progress) ? `style="animation-delay:${i*0.05}s"` : '';
+        html += `<div class="${cls}" ${style}>${i}</div>`;
+      }
+      document.getElementById('uGrid').innerHTML = html;
+      document.getElementById('uFullMsg').style.display = (progress>=10) ? 'block':'none';
+      let wallet = document.getElementById('couponWallet');
+      if (fullCards > 0) {
+        wallet.style.display = 'block';
+        document.getElementById('uCouponCount').innerText = fullCards;
+      } else {
+        wallet.style.display = 'none';
+      }
+    }
+
+    async function userRedeem() {
+      const result = await Swal.fire({ 
+        title: '店員確認兌換', text: '請將手機交給店員輸入密碼', input: 'password', 
+        showCancelButton: true, confirmButtonText: '確認', confirmButtonColor: '#9CB071' 
+      });
+
+      if (result.isConfirmed) {
+        showLoading();
+        const res = await callApi('redeemCard', { password: result.value, phone: CURRENT_PHONE });
+        hideLoading();
+        
+        if(res.success) {
+          playSound('redeem'); Swal.fire({icon: 'success', title: '兌換成功！', timer: 1500, showConfirmButton: false});
+          renderUserCard(document.getElementById('uName').innerText, res.current, res.redeemed);
+        } else { 
+          playSound('error'); Swal.fire({icon: 'error', title: '兌換失敗', text: res.msg}); 
+        }
+      }
+    }
+
+    async function openAdminLogin() {
+      const res = await Swal.fire({
+        title: '工作夥伴登入', input: 'password', inputPlaceholder: '請輸入密碼', confirmButtonColor: '#9CB071'
+      });
+
+      if(res.isConfirmed) {
+        GLOBAL_PASS = res.value;
+        showLoading();
+        const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+        hideLoading();
+        
+        if(r.success) {
+          sessionStorage.setItem('STAFF_PASS', GLOBAL_PASS); 
+          ALL_MEMBERS = r.list;
+          GLOBAL_STAFF_NAME = r.staffName;
+          updateAdminUI(r.list, r.totalRedeemed);
+          showView('view-admin');
+          startPolling(); 
+        } else { 
+          Swal.fire('登入失敗', r.msg, 'error'); 
+        }
+      }
+    }
+
+    function updateAdminUI(list, totalRedeem) {
+      document.getElementById('staffNameDisplay').innerText = GLOBAL_STAFF_NAME;
+      document.getElementById('admRedeemTotal').innerText = totalRedeem;
+      document.getElementById('admMemberTotal').innerText = list.length;
+      filterAdminList(); 
+    }
+
+    function renderAdminGrid(list) {
+      let box = document.getElementById('admGrid');
+      let htmlBuffer = ""; 
+      list.forEach(m => {
+        let fullCards = Math.floor(m.current / 10);
+        let progress = m.current % 10;
+        let p = (progress/10)*100;
+        let hasCouponClass = fullCards > 0 ? 'has-coupon' : '';
+        htmlBuffer += `
+          <div class="m-card ${hasCouponClass}" onclick="adminAction('${m.phone}', '${m.name}', ${m.current}, ${m.isFirstUsed})">
+            <div class="coupon-badge">持有 ${fullCards} 張券</div>
+            <div style="font-weight:500;">${m.name}</div>
+            <div style="font-size:12px; color:#999; margin-bottom:5px;">${m.phone}</div>
+            <div style="font-size:12px; color:#aaa;">進度：${progress}/10</div>
+            <div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div>
+          </div>`;
+      });
+      box.innerHTML = htmlBuffer; 
+    }
+
+    function filterAdminList() {
+      let key = document.getElementById('admSearch').value.toLowerCase();
+      let res = ALL_MEMBERS.filter(m => m.name.toLowerCase().includes(key) || m.phone.includes(key));
+      renderAdminGrid(res);
+    }
+
+    function adminAction(phone, name, currentTotal, isFirstUsed) {
+      let fullCards = Math.floor(currentTotal / 10);
+      let progress = currentTotal % 10;
+      let redeemBtnHtml = fullCards > 0 
+        ? `<button class="btn-act-redeem" onclick="doRedeem('${phone}')"><span>🎫 兌換一張優惠券</span><span>(庫存 ${fullCards} 張)</span></button>` 
+        : '';
+      
+      let bonusBtnClass = isFirstUsed ? "btn-bonus used" : "btn-bonus";
+      let bonusBtnText = isFirstUsed ? "🎁 首次消費 (+5) [已領取]" : "🎁 首次消費 (+5)";
+      let bonusIcon = isFirstUsed ? "🔒" : "🎁";
+
+      Swal.fire({
+        title: '',
+        html: `
+          <div class="ctrl-panel">
+            <div class="ctrl-info">
+              <div class="name">${name}</div>
+              <div class="detail">目前 ${currentTotal} 點 (持有 ${fullCards} 張 + ${progress} 點)</div>
+            </div>
+            
+            <div class="ctrl-input-area">
+              <div class="${bonusBtnClass}" onclick="handleFirstBonus('${phone}', ${isFirstUsed})">
+                 ${bonusIcon} ${bonusBtnText.replace("🎁 ","")}
+              </div>
+              
+              <div class="num-display" id="numDisplay">1</div>
+              
+              <div class="money-input-wrapper">
+                <span style="font-size:12px; color:#888;">消費金額 $</span>
+                <input type="number" class="money-input" id="moneyInput" placeholder="輸入金額" oninput="calcPoints(this.value)">
+                <span style="font-size:12px; color:#888;">= 點數</span>
+              </div>
+
+              <div class="range-wrap">
+                <input type="range" id="rangeInput" min="1" max="20" value="1" oninput="syncVal(this.value)">
+              </div>
+            </div>
+
+            <div class="ctrl-actions">
+              <button class="btn-act-sub" onclick="doStampRange('${phone}', -1)">扣除</button>
+              <button class="btn-act-add" onclick="doStampRange('${phone}', 1)">確認加點</button>
+            </div>
+
+            ${redeemBtnHtml}
+            <div class="history-link" onclick="openHistory('${phone}')">查看歷史紀錄 ></div>
+          </div>
+        `,
+        showConfirmButton: false
+      });
+    }
+
+    window.handleFirstBonus = async function(phone, isUsed) {
+      if (!isUsed) {
+        callBonusApi(phone, false);
+      } else {
+        const res = await Swal.fire({
+          title: '已領取過首購禮', text: '如需強制補發，請輸入管理員密碼', input: 'password', showCancelButton: true, confirmButtonText: '強制發送', confirmButtonColor: '#d33'
+        });
+        if (res.isConfirmed) {
+          GLOBAL_PASS = res.value; 
+          callBonusApi(phone, true);
+        }
+      }
+    }
+
+    async function callBonusApi(phone, force) {
+       Swal.close(); 
+       showLoading();
+       const r = await callApi('giveFirstBonus', { password: GLOBAL_PASS, phone: phone, forceOverride: force });
+       hideLoading();
+       
+       if(r.success) {
+         playSound('success');
+         Swal.fire({ icon: 'success', title: `成功發送首購禮 (+5點)`, timer: 1500, showConfirmButton: false });
+         const res = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+         if(res.success){ ALL_MEMBERS=res.list; updateAdminUI(res.list, res.totalRedeemed); }
+       } else {
+         playSound('error'); Swal.fire('發送失敗', r.msg, 'error');
+       }
+    }
+
+    window.calcPoints = function(money) {
+      if(!money) return;
+      let pts = Math.floor(money / 100);
+      if(pts < 1) pts = 1; if(pts > 20) pts = 20; 
+      syncVal(pts);
+    }
+    
+    window.syncVal = function(val) { 
+      document.getElementById('numDisplay').innerText = val; 
+      document.getElementById('rangeInput').value = val;
+    }
+
+    window.doStampRange = async function(phone, multiplier) {
+      let val = Number(document.getElementById('rangeInput').value);
+      let finalAmount = val * multiplier;
+      let actionText = multiplier > 0 ? "增加" : "扣除";
+      
+      Swal.close(); showLoading();
+      const r = await callApi('addStamp', { password: GLOBAL_PASS, phone: phone, amount: finalAmount });
+      hideLoading();
+
+      if(r.success) {
+        playSound('success'); 
+        Swal.fire({ icon: 'success', title: `成功${actionText} ${val} 點`, timer: 1000, showConfirmButton: false });
+        const res = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+        if(res.success){ ALL_MEMBERS=res.list; updateAdminUI(res.list, res.totalRedeemed); }
+      } else { 
+        playSound('error'); Swal.fire('操作失敗', r.msg, 'error'); 
+      }
+    }
+
+    window.doRedeem = async function(phone) {
+      Swal.close();
+      const result = await Swal.fire({ title: '確認兌換？', text: '將扣除 10 點', icon: 'warning', showCancelButton: true, confirmButtonText: '確認', confirmButtonColor: '#d33' });
+      
+      if (result.isConfirmed) {
+        showLoading();
+        const r = await callApi('redeemCard', { password: GLOBAL_PASS, phone: phone });
+        hideLoading();
+
+        if(r.success) {
+          playSound('redeem'); Swal.fire('兌換成功', '', 'success');
+          const res = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+          if(res.success){ ALL_MEMBERS=res.list; updateAdminUI(res.list, res.totalRedeemed); }
+        } else { playSound('error'); Swal.fire('失敗', r.msg, 'error'); }
+      }
+    }
+
+    window.openHistory = async function(phone) {
+      showLoading();
+      const res = await callApi('getMemberHistory', { phone: phone });
+      hideLoading();
+
+      if(res.success) {
+        let html = "";
+        if(res.history.length === 0) {
+          html = "<div style='color:#ccc; padding:20px; text-align:center;'>尚無紀錄</div>";
+        } else {
+          html = `<div class="hist-list">`;
+          res.history.forEach(h => {
+            let typeClass = '';
+            if(h.action.includes('蓋章') || h.action.includes('首次')) typeClass = 'act-type-plus';
+            if(h.action.includes('扣點')) typeClass = 'act-type-minus';
+            if(h.action.includes('兌換')) typeClass = 'act-type-redeem';
+            html += `<div class="hist-item"><div><div class="hist-act ${typeClass}">${h.action}</div><div class="hist-time">${h.date}</div></div><div class="hist-staff">${h.staff}</div></div>`;
+          });
+          html += `</div>`;
+        }
+        Swal.fire({ title: '', html: `<div><div class="hist-header">📜 歷史紀錄</div>${html}</div>`, confirmButtonColor: '#EFC050', confirmButtonText: '關閉' });
+      } else { Swal.fire('讀取失敗', res.msg, 'error'); }
+    }
+
+    async function openRegister() {
+      let isAdminMode = document.getElementById('view-admin').classList.contains('active');
+      const res = await Swal.fire({
+        title: '新會員註冊',
+        html: `<div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">姓名</div><input id="regName" placeholder="王小明" style="width:95%; margin:0 auto 15px auto; display:block;"><div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">手機</div><input id="regPhone" type="tel" placeholder="09xxxxxxxx" style="width:95%; margin:0 auto 15px auto; display:block;" maxlength="10">`,
+        confirmButtonText: '確定註冊', confirmButtonColor: '#9CB071', showCancelButton: true, cancelButtonText: '取消',
+        preConfirm: () => {
+          const n = document.getElementById('regName').value.trim();
+          const p = document.getElementById('regPhone').value.trim();
+          if(!n || !p) { Swal.showValidationMessage('請填寫完整'); return false; }
+          if(!/^09\d{8}$/.test(p)) { Swal.showValidationMessage('手機格式錯誤'); return false; }
+          return [n, p];
+        }
+      });
+
+      if(res.isConfirmed) {
+        showLoading();
+        // 如果是後台模式，傳入當前管理員密碼
+        const currentPass = isAdminMode ? GLOBAL_PASS : null;
+        const r = await callApi('registerMember', { password: currentPass, name: res.value[0], phone: res.value[1] });
+        hideLoading();
+
+        if(r.success) {
+          Swal.fire('成功', '註冊完成！', 'success');
+          if(isAdminMode) { 
+            const adminRes = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+            if(adminRes.success){ ALL_MEMBERS=adminRes.list; updateAdminUI(adminRes.list, adminRes.totalRedeemed); }
+          }
+        } else { Swal.fire('失敗', r.msg, 'error'); }
+      }
+    }
+
+    function logoutAdmin() { GLOBAL_PASS = ""; sessionStorage.removeItem('STAFF_PASS'); if(POLLING_TIMER) clearInterval(POLLING_TIMER); showView('view-home'); }
+    
+    window.onload = async function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const p = urlParams.get('phone');
+      if(p) { document.getElementById('homePhone').value = p; userLogin(); }
+      let savedPass = sessionStorage.getItem('STAFF_PASS');
+      if(savedPass) {
+        GLOBAL_PASS = savedPass; showLoading();
+        const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
+        hideLoading();
+        if(r.success) { ALL_MEMBERS = r.list; GLOBAL_STAFF_NAME = r.staffName; updateAdminUI(r.list, r.totalRedeemed); showView('view-admin'); startPolling(); } 
+        else { sessionStorage.removeItem('STAFF_PASS'); }
+      }
+    }
+  </script>
+</body>
+</html>
