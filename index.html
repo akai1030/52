@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>無貳良品集點卡</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     :root { 
@@ -75,6 +76,11 @@
     .m-card.has-coupon .bar-fill { background: var(--brand-pink); }
     .coupon-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; background: var(--brand-pink); color: white; padding: 2px 8px; border-radius: 8px; display: none; }
     .m-card.has-coupon .coupon-badge { display: block; }
+    
+    /* 壽星標記 */
+    .bday-badge { position: absolute; top: 10px; left: 10px; font-size: 16px; display: none; }
+    .m-card.is-birthday .bday-badge { display: block; animation: bounce 1s infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
     .fab { position: fixed; bottom: 30px; right: 30px; width: 55px; height: 55px; background: var(--brand-green); color: white; border-radius: 50%; font-size: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px -5px rgba(156, 176, 113, 0.5); cursor: pointer; z-index: 100;}
 
@@ -231,10 +237,9 @@
   </div>
 
   <script>
-    // ★★★★ 請在這裡填入你的 Apps Script 新部署網址 ★★★★
+    // ★ 已填入你的 ID
     const API_URL = "https://script.google.com/macros/s/AKfycbwsfPMn54aqd3u-4SHkGmdfS-drw8MLNE-3lVq1XP-pCPSOW1ZxwDvTnd-85uQpuuc/exec"; 
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-
+    
     const SOUND_SUCCESS = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'); 
     const SOUND_REDEEM = new Audio('https://actions.google.com/sounds/v1/science_fiction/scifi_laser.ogg'); 
     const SOUND_ERROR = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); 
@@ -246,6 +251,10 @@
         if(type === 'error') { SOUND_ERROR.currentTime = 0; SOUND_ERROR.play(); }
       } catch(e) { console.log("Audio error"); }
     }
+    
+    function fireConfetti() {
+       confetti({ origin: { y: 0.7 } });
+    }
 
     let GLOBAL_PASS = ""; 
     let GLOBAL_STAFF_NAME = "";
@@ -255,11 +264,6 @@
 
     // API 呼叫函式
     async function callApi(action, params = {}) {
-      if(API_URL.includes("你的ID")) {
-        Swal.fire('設定錯誤', '請記得去 index.html 修改 API_URL 喔！', 'error');
-        return {success: false};
-      }
-      
       const payload = { action: action, params: params };
       try {
         const response = await fetch(API_URL, {
@@ -285,9 +289,11 @@
         updateAdminUI(ALL_MEMBERS, document.getElementById('admRedeemTotal').innerText); 
       }
     }
-
-    function showLoading() { document.getElementById('loader').style.display = 'flex'; }
-    function hideLoading() { document.getElementById('loader').style.display = 'none'; }
+    
+    // ★ 修正：全域載入器 (統一使用 Fun Loader)
+    function showLoading() { startFunLoading(); }
+    function hideLoading() { stopFunLoading(); }
+    
     function forceStopLoading() {
       if(POLLING_TIMER) clearInterval(POLLING_TIMER);
       GLOBAL_PASS = ""; hideLoading(); showView('view-home');
@@ -298,8 +304,8 @@
     const LOADING_MSGS = [
       "正在召喚雲端資料...",
       "店長正在翻閱點名簿...",
-      "用日常消費做公益...",
-      "一起買好物，做好事...",
+      "訊號正在飛往 Google...",
+      "正在計算您的優惠...",
       "稍等一下，貓咪擋在主機前...",
       "快到了，再忍耐一下...",
       "正在幫您把點數擦亮...",
@@ -328,7 +334,7 @@
       POLLING_TIMER = setInterval(async () => {
         // 使用者模式不需頻繁輪詢
         if(document.getElementById('view-admin').classList.contains('active') && GLOBAL_PASS) {
-          // 後台模式才需要更新列表，但也可以拉長秒數
+          // 後台模式才需要更新列表
           const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
           if(r.success) { ALL_MEMBERS = r.list; updateAdminUI(r.list, r.totalRedeemed); }
         }
@@ -377,7 +383,7 @@
       document.getElementById('uFullMsg').style.display = 'none';
       document.getElementById('couponWallet').style.display = 'none';
 
-      startFunLoading(); // 開始講幹話
+      startFunLoading(); 
 
       const res = await callApi('getMemberData', { phone: p });
       
@@ -385,6 +391,16 @@
 
       if(res.success) {
         renderUserCard(res.name, res.current, res.redeemed);
+        // ★ 如果是壽星，撒花特效 + 彈窗
+        if(res.isBirthday) {
+            fireConfetti();
+            Swal.fire({
+                title: '🎂 生日快樂！',
+                text: '今天是您的生日，無貳良品祝您生日快樂！',
+                icon: 'success',
+                confirmButtonColor: '#F7A8B8'
+            });
+        }
       } else {
         Swal.fire({ icon: 'error', title: '找不到會員', text: '請先註冊會員喔！', confirmButtonText: '去註冊', confirmButtonColor: '#EFC050' }).then(r => { 
           if(r.isConfirmed) openRegister(); 
@@ -436,6 +452,7 @@
       }
     }
 
+    // 後台登入也加入骨架屏邏輯
     async function openAdminLogin() {
       const res = await Swal.fire({
         title: '工作夥伴登入', input: 'password', inputPlaceholder: '請輸入密碼', confirmButtonColor: '#9CB071'
@@ -443,21 +460,37 @@
 
       if(res.isConfirmed) {
         GLOBAL_PASS = res.value;
-        showLoading();
+        
+        // ★ 立即切換到 Admin 頁面，顯示骨架
+        showView('view-admin');
+        renderAdminSkeleton();
+        
+        startFunLoading();
         const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
-        hideLoading();
+        stopFunLoading();
         
         if(r.success) {
           sessionStorage.setItem('STAFF_PASS', GLOBAL_PASS); 
           ALL_MEMBERS = r.list;
           GLOBAL_STAFF_NAME = r.staffName;
           updateAdminUI(r.list, r.totalRedeemed);
-          showView('view-admin');
           startPolling(); 
         } else { 
+          showView('view-home'); // 失敗回首頁
           Swal.fire('登入失敗', r.msg, 'error'); 
         }
       }
+    }
+    
+    // ★ Admin 骨架屏
+    function renderAdminSkeleton() {
+        let box = document.getElementById('admGrid');
+        let html = '';
+        for(let i=0; i<6; i++) {
+            html += `<div class="m-card skeleton" style="height:100px;"></div>`;
+        }
+        box.innerHTML = html;
+        document.getElementById('staffNameDisplay').innerText = 'Loading...';
     }
 
     function updateAdminUI(list, totalRedeem) {
@@ -475,8 +508,11 @@
         let progress = m.current % 10;
         let p = (progress/10)*100;
         let hasCouponClass = fullCards > 0 ? 'has-coupon' : '';
+        let bdayClass = m.isBirthdayToday ? 'is-birthday' : ''; // 壽星樣式
+        
         htmlBuffer += `
-          <div class="m-card ${hasCouponClass}" onclick="adminAction('${m.phone}', '${m.name}', ${m.current}, ${m.isFirstUsed})">
+          <div class="m-card ${hasCouponClass} ${bdayClass}" onclick="adminAction('${m.phone}', '${m.name}', ${m.current}, ${m.isFirstUsed}, ${m.isBirthdayToday})">
+            <div class="bday-badge">🎂</div>
             <div class="coupon-badge">持有 ${fullCards} 張券</div>
             <div style="font-weight:500;">${m.name}</div>
             <div style="font-size:12px; color:#999; margin-bottom:5px;">${m.phone}</div>
@@ -493,7 +529,19 @@
       renderAdminGrid(res);
     }
 
-    function adminAction(phone, name, currentTotal, isFirstUsed) {
+    function adminAction(phone, name, currentTotal, isFirstUsed, isBirthdayToday) {
+      // ★ 如果是壽星，點開就撒花並提示
+      if(isBirthdayToday) {
+          fireConfetti();
+          Swal.fire({
+             title: `🎂 今天是 ${name} 生日！`,
+             text: '記得送小禮物喔！',
+             icon: 'success',
+             timer: 2000,
+             showConfirmButton: false
+          });
+      }
+
       let fullCards = Math.floor(currentTotal / 10);
       let progress = currentTotal % 10;
       let redeemBtnHtml = fullCards > 0 
@@ -503,13 +551,16 @@
       let bonusBtnClass = isFirstUsed ? "btn-bonus used" : "btn-bonus";
       let bonusBtnText = isFirstUsed ? "🎁 首次消費 (+5) [已領取]" : "🎁 首次消費 (+5)";
       let bonusIcon = isFirstUsed ? "🔒" : "🎁";
+      
+      // 在名字旁加生日圖示
+      let nameDisplay = isBirthdayToday ? `${name} <span style="font-size:14px; color:#F7A8B8">🎂壽星</span>` : name;
 
       Swal.fire({
         title: '',
         html: `
           <div class="ctrl-panel">
             <div class="ctrl-info">
-              <div class="name">${name}</div>
+              <div class="name">${nameDisplay}</div>
               <div class="detail">目前 ${currentTotal} 點 (持有 ${fullCards} 張 + ${progress} 點)</div>
             </div>
             
@@ -574,7 +625,7 @@
     }
 
     window.calcPoints = function(money) {
-      if(!money) { syncVal(0); return; } // 沒填就是 0
+      if(!money) { syncVal(0); return; } 
       let pts = Math.floor(money / 100);
       if(pts > 20) pts = 20; 
       syncVal(pts);
@@ -649,10 +700,8 @@
             let displayAction = h.action;
             if(h.money && h.money > 0) {
                 if(displayAction.includes('消費紀錄')) {
-                     // 如果是 0 點，只顯示金額
                      displayAction = `消費$${h.money}`;
                 } else {
-                     // 否則顯示 金額 + 動作
                      displayAction = `消費$${h.money} ${displayAction}`;
                 }
             }
@@ -676,21 +725,32 @@
       let isAdminMode = document.getElementById('view-admin').classList.contains('active');
       const res = await Swal.fire({
         title: '新會員註冊',
-        html: `<div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">姓名</div><input id="regName" placeholder="王小明" style="width:95%; margin:0 auto 15px auto; display:block;"><div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">手機</div><input id="regPhone" type="tel" placeholder="09xxxxxxxx" style="width:95%; margin:0 auto 15px auto; display:block;" maxlength="10">`,
+        html: `
+            <div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">姓名</div>
+            <input id="regName" placeholder="王小明" style="width:95%; margin:0 auto 15px auto; display:block;">
+            
+            <div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">手機</div>
+            <input id="regPhone" type="tel" placeholder="09xxxxxxxx" style="width:95%; margin:0 auto 15px auto; display:block;" maxlength="10">
+            
+            <div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">生日</div>
+            <input id="regBirthday" type="date" style="width:95%; margin:0 auto 15px auto; display:block;">
+        `,
         confirmButtonText: '確定註冊', confirmButtonColor: '#9CB071', showCancelButton: true, cancelButtonText: '取消',
         preConfirm: () => {
           const n = document.getElementById('regName').value.trim();
           const p = document.getElementById('regPhone').value.trim();
-          if(!n || !p) { Swal.showValidationMessage('請填寫完整'); return false; }
+          const b = document.getElementById('regBirthday').value; // 取得生日
+          if(!n || !p || !b) { Swal.showValidationMessage('請填寫完整 (包含生日)'); return false; }
           if(!/^09\d{8}$/.test(p)) { Swal.showValidationMessage('手機格式錯誤'); return false; }
-          return [n, p];
+          return {name: n, phone: p, birthday: b};
         }
       });
 
       if(res.isConfirmed) {
         showLoading();
         const currentPass = isAdminMode ? GLOBAL_PASS : null;
-        const r = await callApi('registerMember', { password: currentPass, name: res.value[0], phone: res.value[1] });
+        // 傳送 birthday
+        const r = await callApi('registerMember', { password: currentPass, name: res.value.name, phone: res.value.phone, birthday: res.value.birthday });
         hideLoading();
 
         if(r.success) {
@@ -711,11 +771,16 @@
       if(p) { document.getElementById('homePhone').value = p; userLogin(); }
       let savedPass = sessionStorage.getItem('STAFF_PASS');
       if(savedPass) {
-        GLOBAL_PASS = savedPass; showLoading();
+        GLOBAL_PASS = savedPass; 
+        showView('view-admin'); // 立即切換
+        renderAdminSkeleton();  // 顯示骨架
+        
+        startFunLoading();
         const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
-        hideLoading();
-        if(r.success) { ALL_MEMBERS = r.list; GLOBAL_STAFF_NAME = r.staffName; updateAdminUI(r.list, r.totalRedeemed); showView('view-admin'); startPolling(); } 
-        else { sessionStorage.removeItem('STAFF_PASS'); }
+        stopFunLoading();
+        
+        if(r.success) { ALL_MEMBERS = r.list; GLOBAL_STAFF_NAME = r.staffName; updateAdminUI(r.list, r.totalRedeemed); startPolling(); } 
+        else { sessionStorage.removeItem('STAFF_PASS'); showView('view-home'); }
       }
     }
   </script>
