@@ -122,6 +122,25 @@
     .act-type-minus { color: #E57373; }
     .act-type-redeem { color: var(--brand-pink); }
 
+    /* 骨架屏動畫：讓灰色區塊閃爍，感覺像在呼吸 */
+    @keyframes skeleton-loading {
+      0% { background-color: #f0f0f0; }
+      50% { background-color: #e0e0e0; }
+      100% { background-color: #f0f0f0; }
+    }
+    .skeleton {
+      animation: skeleton-loading 1.5s infinite;
+      color: transparent !important; /* 隱藏文字 */
+      background: #f0f0f0;
+      border-radius: 8px;
+      user-select: none;
+    }
+    .skeleton-text {
+      width: 100%;
+      height: 1em;
+      display: inline-block;
+    }
+
     /* SweetAlert Override */
     div:where(.swal2-popup) { border-radius: 30px !important; padding: 25px !important; width: 85% !important; max-width: 360px !important; } 
     div:where(.swal2-actions) { width: 100% !important; margin: 15px 0 0 0 !important; }
@@ -274,6 +293,36 @@
       GLOBAL_PASS = ""; hideLoading(); showView('view-home');
     }
 
+    // 隨機幹話 Loader
+    let FUN_LOADER_TIMER = null;
+    const LOADING_MSGS = [
+      "正在召喚雲端資料...",
+      "店長正在翻閱點名簿...",
+      "用日常消費做公益...",
+      "一起買好物，做好事...",
+      "稍等一下，貓咪擋在主機前...",
+      "快到了，再忍耐一下...",
+      "正在幫您把點數擦亮...",
+      "無貳良品，品質保證..."
+    ];
+
+    function startFunLoading() {
+      document.getElementById('loader').style.display = 'flex';
+      const msgEl = document.querySelector('#loader div[style*="font-size:12px"]'); 
+      let i = 0;
+      msgEl.innerText = LOADING_MSGS[0];
+      if(FUN_LOADER_TIMER) clearInterval(FUN_LOADER_TIMER);
+      FUN_LOADER_TIMER = setInterval(() => {
+        i = (i + 1) % LOADING_MSGS.length;
+        msgEl.innerText = LOADING_MSGS[i];
+      }, 1500);
+    }
+
+    function stopFunLoading() {
+      if(FUN_LOADER_TIMER) clearInterval(FUN_LOADER_TIMER);
+      document.getElementById('loader').style.display = 'none';
+    }
+
     function startPolling() {
       if(POLLING_TIMER) clearInterval(POLLING_TIMER);
       POLLING_TIMER = setInterval(async () => {
@@ -308,21 +357,39 @@
       });
     }
 
+    // 改良版登入：骨架屏 + 瞬間切換
     async function userLogin() {
       let p = document.getElementById('homePhone').value.trim();
       if(!p) return Swal.fire('請輸入手機號碼');
       
-      showLoading();
+      CURRENT_PHONE = p;
+      showView('view-user'); // 瞬間切換
+      
+      // 顯示骨架屏
+      document.getElementById('uName').innerHTML = '<span class="skeleton skeleton-text" style="width: 80px;"></span>';
+      document.getElementById('uRedeem').innerHTML = '<span class="skeleton skeleton-text" style="width: 20px;"></span>';
+      document.getElementById('uCouponCount').innerText = '-';
+      
+      let skeletonGrid = '';
+      for(let i=0; i<10; i++) skeletonGrid += `<div class="stamp skeleton"></div>`;
+      document.getElementById('uGrid').innerHTML = skeletonGrid;
+      
+      document.getElementById('uFullMsg').style.display = 'none';
+      document.getElementById('couponWallet').style.display = 'none';
+
+      startFunLoading(); // 開始講幹話
+
       const res = await callApi('getMemberData', { phone: p });
-      hideLoading();
+      
+      stopFunLoading();
 
       if(res.success) {
-        CURRENT_PHONE = p;
         renderUserCard(res.name, res.current, res.redeemed);
-        showView('view-user');
-        // startPolling(); // 使用者模式暫時關閉輪詢以節省效能
       } else {
-        Swal.fire({ icon: 'error', title: '找不到會員', text: '請先註冊會員喔！', confirmButtonText: '去註冊', confirmButtonColor: '#EFC050' }).then(r => { if(r.isConfirmed) openRegister(); });
+        Swal.fire({ icon: 'error', title: '找不到會員', text: '請先註冊會員喔！', confirmButtonText: '去註冊', confirmButtonColor: '#EFC050' }).then(r => { 
+          if(r.isConfirmed) openRegister(); 
+          showView('view-home');
+        });
       }
     }
 
@@ -507,9 +574,8 @@
     }
 
     window.calcPoints = function(money) {
-      if(!money) { syncVal(0); return; } // ★ 修改：沒填就是 0
+      if(!money) { syncVal(0); return; } // 沒填就是 0
       let pts = Math.floor(money / 100);
-      // ★ 修改：移除 "小於1則設為1" 的限制
       if(pts > 20) pts = 20; 
       syncVal(pts);
     }
@@ -579,7 +645,7 @@
             if(h.action.includes('扣點') || h.action.includes('扣除')) typeClass = 'act-type-minus';
             if(h.action.includes('兌換')) typeClass = 'act-type-redeem';
             
-            // ★★★ 格式優化：消費$560 蓋章(+5) ★★★
+            // 格式優化：消費$560 蓋章(+5)
             let displayAction = h.action;
             if(h.money && h.money > 0) {
                 if(displayAction.includes('消費紀錄')) {
