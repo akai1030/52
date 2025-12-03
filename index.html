@@ -7,22 +7,41 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--y:#EFC050;--g:#9CB071;--p:#F7A8B8;--bg:#FAFAFA;--txt:#555}
+:root{--y:#EFC050;--g:#9CB071;--p:#F7A8B8;--b:#64B5F6;--bg:#FAFAFA;--txt:#555}
 body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);margin:0;padding:20px;color:var(--txt);-webkit-tap-highlight-color:transparent}
 .view{display:none;min-height:90vh;flex-direction:column;align-items:center;width:100%;max-width:500px;margin:0 auto}
 .view.active{display:flex}
 h2{margin:10px 0 5px;letter-spacing:2px;font-size:24px;font-weight:500;text-align:center}
 .sub{color:#999;font-size:13px;margin-bottom:30px;letter-spacing:1px;font-weight:300;text-align:center}
-input{width:100%;padding:15px;border:2px solid #eee;border-radius:25px;font-size:16px;text-align:center;margin-bottom:15px;background:#fff;transition:.3s;box-sizing:border-box;font-family:inherit}
-input:focus{outline:0;border-color:var(--y);box-shadow:0 0 0 4px rgba(239,192,80,.1)}
-button{width:100%;padding:15px;border:none;border-radius:25px;font-size:16px;font-weight:500;cursor:pointer;transition:.2s;margin-bottom:15px;font-family:inherit}
-button:active{transform:scale(.98)}
-.btn-y{background:var(--y);color:#fff;box-shadow:0 8px 20px -5px rgba(239,192,80,.4)}
-.btn-g{background:var(--g);color:#fff;box-shadow:0 8px 20px -5px rgba(156,176,113,.4)}
-.btn-p{background:var(--p);color:#fff;box-shadow:0 8px 20px -5px rgba(247,168,184,.4)}
-.btn-o{background:#fff;border:1px solid #ddd;color:#888}
+
+/* Input Fields */
+input, select{width:100%;padding:15px;border:2px solid #eee;border-radius:25px;font-size:16px;text-align:center;margin-bottom:15px;background:#fff;transition:.3s;box-sizing:border-box;font-family:inherit;-webkit-appearance:none;}
+input:focus, select:focus{outline:0;border-color:var(--y);box-shadow:0 0 0 4px rgba(239,192,80,.1)}
+
+/* Textarea Style */
+textarea{width:100%;padding:20px;border:2px solid #eee;border-radius:25px;font-size:15px;margin-bottom:15px;background:#fff;font-family:inherit;box-sizing:border-box;resize:none;min-height:350px;line-height:1.7;color:#333;box-shadow:inset 0 2px 5px rgba(0,0,0,0.05);transition:.3s}
+textarea:focus{outline:0;border-color:var(--g);box-shadow:0 0 0 4px rgba(156,176,113,.1)}
+.note-input{border:2px dashed #ddd;background:#fffdf5;}
+
+/* --- BUTTON STYLES --- */
+button{
+  width:100%; padding:15px; border:none; border-radius:25px;
+  font-size:16px; font-weight:500; cursor:pointer; margin-bottom:15px;
+  font-family:inherit; position: relative;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+button:hover { transform: translateY(-3px); filter: brightness(1.08); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+button:active { transform: scale(0.96) translateY(0); filter: brightness(0.92); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+.btn-y{background:var(--y);color:#fff;box-shadow:0 8px 15px -5px rgba(239,192,80,.4)}
+.btn-g{background:var(--g);color:#fff;box-shadow:0 8px 15px -5px rgba(156,176,113,.4)}
+.btn-p{background:var(--p);color:#fff;box-shadow:0 8px 15px -5px rgba(247,168,184,.4)}
+.btn-b{background:var(--b);color:#fff;box-shadow:0 8px 15px -5px rgba(100,181,246,.4)}
+.btn-o{background:#fff;border:1px solid #ddd;color:#888; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
 .btn-adm{background:#fff;color:var(--g);border:1px solid var(--g);font-size:14px;padding:12px}
 .btn-reg{background:#fff;border:2px solid var(--y);color:var(--y)}
+.btn-use{background:var(--y);color:#fff;font-size:14px;padding:8px 20px;border-radius:15px;width:auto;margin:0;box-shadow:0 4px 10px rgba(239,192,80,.3)}
+
 .card{background:#fff;padding:50px 30px;border-radius:30px;box-shadow:0 15px 35px -10px rgba(0,0,0,.08);width:100%;box-sizing:border-box;text-align:center}
 .div{margin:25px 0;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:12px}
 .div::before,.div::after{content:'';flex:1;border-bottom:1px solid #eee;margin:0 10px}
@@ -36,19 +55,33 @@ button:active{transform:scale(.98)}
 .stp.on.anim{animation:pop .5s ease}@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1.1);opacity:1}}
 .wall{background:#FFF8E1;border:2px dashed var(--y);border-radius:20px;padding:15px;margin-top:25px;text-align:center;display:none}
 .wall-n{font-size:32px;font-weight:700;color:var(--y);margin:5px 0}
-.btn-use{background:var(--y);color:#fff;font-size:14px;padding:8px 20px;border-radius:15px;width:auto;margin:0;box-shadow:0 4px 10px rgba(239,192,80,.3)}
+
 .nav{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:15px}
 .dash{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:20px}
 .stat{background:#fff;padding:15px;border-radius:20px;text-align:center;border-bottom:4px solid #eee}
 .s-val{font-size:22px;font-weight:500;color:#333}.s-lbl{font-size:11px;color:#999}
 .search{display:flex;gap:10px;margin-bottom:20px}.search input{margin:0;flex:1;text-align:left;padding-left:20px}
+
+/* --- ADMIN MEMBER CARD --- */
 .m-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:15px;width:100%;padding-bottom:80px}
-.mc{background:#fff;border-radius:20px;padding:15px;cursor:pointer;border:2px solid transparent;transition:.2s;position:relative}
-.mc:active{transform:scale(.98)}.mc.has{border-color:var(--p);background:#FFFBFB}
+.mc{
+    background:#fff; border-radius:20px; padding:15px; cursor:pointer;
+    border:2px solid transparent; position:relative;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.mc:active{ transform:scale(.96); }
+.mc:hover {
+    transform: translateY(-5px); border-color: var(--g);
+    box-shadow: 0 10px 25px -5px rgba(156,176,113,.3); background: #F8FDF5;
+}
+.mc.has{border-color:var(--p);background:#FFFBFB}
+.mc.has:hover { border-color:var(--p); background:#FFF0F5; box-shadow: 0 10px 25px -5px rgba(247,168,184,.4); }
+
 .bar{height:6px;background:#eee;border-radius:3px;margin-top:10px;overflow:hidden}.fill{height:100%;background:var(--g);width:0%;transition:.3s}
 .mc.has .fill{background:var(--p)}.c-bad{position:absolute;top:10px;right:10px;font-size:10px;background:var(--p);color:#fff;padding:2px 8px;border-radius:8px;display:none}
 .mc.has .c-bad{display:block}.b-bad{position:absolute;top:10px;left:10px;font-size:16px;display:none}
 .mc.bday .b-bad{display:block;animation:bnc 1s infinite}@keyframes bnc{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
 .fab{position:fixed;bottom:30px;right:30px;width:55px;height:55px;background:var(--g);color:#fff;border-radius:50%;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px -5px rgba(156,176,113,.5);cursor:pointer;z-index:100}
 .ctrl-in{background:#f9f9f9;padding:20px;border-radius:20px;margin-bottom:20px}
 .num-d{font-size:48px;font-weight:700;color:var(--g);margin-bottom:10px;line-height:1}
@@ -62,6 +95,22 @@ input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;cursor:po
 .btn-bon{background:#FFF3E0;color:#FF9800;font-size:14px;padding:8px 15px;border-radius:20px;border:1px solid #FFE0B2;margin-bottom:10px;cursor:pointer;display:inline-block}.btn-bon.used{background:#EEE;color:#AAA;border-color:#DDD;cursor:default}
 .skel{animation:sl 1.5s infinite;color:transparent!important;background:#f0f0f0;border-radius:8px}@keyframes sl{0%,100%{background-color:#f0f0f0}50%{background-color:#e0e0e0}}
 .sk-t{width:100%;height:1em;display:inline-block}
+
+.soc-box{width:100%;text-align:center;} 
+.soc-tip{background:#FFF8E1;border:2px dashed var(--y);color:#8d6e1f;padding:15px;border-radius:20px;font-size:14px;margin-top:15px;display:flex;align-items:start;gap:10px;text-align:left;line-height:1.5;}
+.soc-tip::before{content:'💡';font-size:18px;}
+.tog-grp{display:flex;gap:10px;margin-bottom:15px;}
+.tog-btn{
+    flex:1; padding:12px; border:2px solid #eee; border-radius:25px;
+    background:#fff; color:#999; font-size:14px; font-weight:500;
+    cursor:pointer; text-align:center;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.tog-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-color:#ddd; }
+.tog-btn:active { transform: scale(0.96); }
+.tog-btn.act{background:var(--g);color:#fff;border-color:var(--g);box-shadow:0 5px 15px -5px rgba(156,176,113,.5);}
+.tog-btn.act:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
 div:where(.swal2-popup){border-radius:30px!important;padding:25px!important;width:85%!important;max-width:360px!important}
 div:where(.swal2-actions) button{border-radius:15px!important;flex:1!important;margin:0 5px!important}
 #load{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);z-index:9999;display:none;justify-content:center;align-items:center;flex-direction:column}
@@ -104,10 +153,14 @@ div:where(.swal2-actions) button{border-radius:15px!important;flex:1!important;m
         <div class="wall-n"><span id="ucnt">0</span> 張</div>
         <button class="btn-use" onclick="uRedeem()">立即兌換折扣</button>
       </div>
-      <div style="text-align:center;margin-top:30px;font-size:13px;color:#999">
-        歷史使用：<span id="ur" style="color:var(--y);font-weight:500;font-size:16px;cursor:pointer;text-decoration:underline" onclick="hist(STATE.curr)">0</span> 張
+
+      <div style="text-align:center;margin-top:15px;margin-bottom:10px;color:#999;font-size:13px">
+        累計已兌換 <span id="ur" style="color:var(--y);font-weight:700">0</span> 張
       </div>
     </div>
+
+    <button class="btn-o" onclick="hist(STATE.curr)">📜 查看歷史紀錄</button>
+
     <div class="link" onclick="rules()" style="text-align:center;margin-bottom:20px">📝 查看集點規則</div>
     <button class="btn-o" onclick="route('v-home')">↺ 返回查詢</button>
   </div>
@@ -117,6 +170,11 @@ div:where(.swal2-actions) button{border-radius:15px!important;flex:1!important;m
       <div style="font-weight:500;display:flex;align-items:center;gap:5px">無貳後台 <span id="sn" style="font-size:12px;background:#E8F5E9;color:#4CAF50;padding:2px 8px;border-radius:10px">Guest</span></div>
       <button class="btn-o" style="width:auto;margin:0;padding:5px 15px;font-size:12px;border-radius:15px" onclick="logout()">登出</button>
     </div>
+    
+    <button class="btn-b" onclick="route('v-social');socInit();" style="display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 20px -5px rgba(100,181,246,.4)">
+        <span>✍️ 社群貼文助手</span>
+    </button>
+
     <div class="dash">
       <div class="stat" style="border-color:var(--p)"><div class="s-lbl">優惠券已兌換</div><div class="s-val" id="ar">0</div></div>
       <div class="stat" style="border-color:var(--y)"><div class="s-lbl">會員總數</div><div class="s-val" id="am">0</div></div>
@@ -124,6 +182,34 @@ div:where(.swal2-actions) button{border-radius:15px!important;flex:1!important;m
     <div class="search"><input type="text" id="as" placeholder="🔍 搜尋..." onkeyup="filter()"></div>
     <div class="m-grid" id="ag"></div>
     <div class="fab" onclick="reg()">＋</div>
+  </div>
+
+  <div id="v-social" class="view">
+    <div class="card" style="padding-top:30px;">
+        <div class="nav">
+            <div style="font-weight:500;font-size:18px;">社群貼文助手</div>
+            <button class="btn-o" style="width:auto;margin:0;padding:6px 15px;font-size:12px;border-radius:15px" onclick="route('v-adm')">✕ 關閉</button>
+        </div>
+
+        <div class="soc-box">
+            <div style="font-size:13px;color:#999;margin-bottom:10px;text-align:left;">今天想發什麼主題的文？</div>
+            <select id="soc-mode" onchange="socRender()" style="text-align-last:center;"> 
+                <option value="new">📦 近期上架 (新物資)</option>
+                <option value="staff">❤️ 自己人也買 (員工推)</option>
+                <option value="story">😊 故事回饋 (顧客)</option>
+            </select>
+
+            <div id="soc-inputs" style="margin-bottom:20px;"></div>
+            <input id="si-custom" class="note-input" placeholder="✏️ 其他補充 (選填，例如: 週五特價、需自取...)">
+            <div id="soc-tip" class="soc-tip" style="display:none;"></div>
+            <div class="div" style="margin:25px 0;">產生結果</div>
+            <textarea id="soc-res" readonly placeholder="點擊下方按鈕產生文案..."></textarea>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-g" onclick="socGen()" style="flex:1.5;">✨ 隨機產生貼文</button>
+                <button class="btn-o" onclick="socCopy()" style="flex:1;">📋 複製</button>
+            </div>
+        </div>
+    </div>
   </div>
 
 <script>
@@ -153,6 +239,117 @@ function stopLoad(force) { if(STATE.timer) clearInterval(STATE.timer); if(force)
 function route(id) { document.querySelectorAll('.view').forEach(e=>e.classList.remove('active')); $(`#${id}`).classList.add('active'); window.scrollTo(0,0); }
 
 function rules() { Swal.fire({title:'規則說明',html:`<div style="text-align:left;font-size:14px;color:#555">1. 消費 $100 集 1 點<br>2. 集滿 10 點換 9 折券<br>3. 首次消費贈 5 點</div>`,confirmButtonColor:'#EFC050'}); }
+
+// === SOCIAL TOOL LOGIC START ===
+const SOC_DATA = {
+    new: {
+        tips: "請拍攝商品特寫，背景盡量乾淨，或實際擺放在使用場景中（例如杯子裝水放在桌上）。",
+        title: "【✨ 本週新物報到 ✨】", 
+        openers: ["大家～這週我們又整理出一批寶藏了！📦✨", "熱騰騰的整理箱剛開箱，小編馬上來報好康！", "這週收到的物資狀況都超好，整理的時候心情超好的～"],
+        vibes: ["說真的，這種質感用這種價格帶走...CP值真的高到不合理🤣", "這個擺在家裡，整個氛圍感直接拉滿，超有味道！", "不用花大錢也能擁有讓人羨慕的好東西，這就是二手的魅力呀～"],
+        closings: ["只有一件，喜歡的朋友手腳要快，晚來真的會哭喔～🏃‍♂️💨", "心動不如馬上行動，這種好物通常一下子就消失了！", "明天營業時間歡迎來現場挖寶，慢了就沒囉！"]
+    },
+    staff: {
+        tips: "可以由工作人員手持商品，或是做出「不想給別人」的趣味動作。",
+        title: "【🤫 店員私心推推】", 
+        intros: ["這篇文...其實是小編含淚打出來的 (咬手帕) 🥲", "有一種痛，叫做「店員自己想買但不能買」...", "今天這款真的是連我們內部人員都想偷偷私藏的好物！"],
+        closings: ["趁我還沒後悔下架之前，識貨的你趕快來把它帶回家吧！🏠", "如果這週沒賣出去，小編我就真的要自己收編了😂 (認真)", "這種好康通常不等人，真的忍得很辛苦才拿出來上架！"],
+        struggles: ["但我還是忍痛把它擺上架了...為了大家的福利！", "理智告訴我不能再買了，所以機會讓給你們！", "櫃子已經爆了，只好忍痛割愛給有緣人～"]
+    },
+    story: {
+        tips_y: "請拍攝客人與商品的合照，記得引導客人看鏡頭微笑。",
+        tips_n: "請單獨拍攝已售出的商品，或是包裝好的樣子，象徵它即將展開新旅程。",
+        title: "【🥰 暖心回饋日常】", 
+        openers: ["每次看到大家在店裡挖到寶的笑容，就是我們最開心的時刻！❤️", "最喜歡聽客人分享買回去要怎麼用，感覺物品都有了新生命～", "這就是我們經營二手商店最大的動力呀！看著好物找到新主人。"],
+        connectors: ["當下真的覺得心裡暖暖的～", "聽得我們都覺得好感動，這就是緣分吧！", "能夠幫它找到這麼棒的新主人，真的太好了！"]
+    }
+};
+
+let soc_state = { hasPhoto: true, hasFeedback: true };
+
+function socInit() {
+    $('#soc-res').value = '';
+    $('#si-custom').value = '';
+    socRender();
+}
+
+function socRender() {
+    const mode = $('#soc-mode').value;
+    const con = $('#soc-inputs');
+    let html = '';
+
+    if(mode === 'new') {
+        html = `<input id="si-1" placeholder="商品名稱 (例: 復古馬克杯)">
+                <input id="si-2" placeholder="特色/氛圍 (例: 辦公室下午茶必備)">`;
+        $('#soc-tip').innerText = SOC_DATA.new.tips;
+    } else if(mode === 'staff') {
+        html = `<input id="si-1" placeholder="商品名稱 (例: 全新帆布包)">
+                <input id="si-2" placeholder="私心推薦理由 (例: 材質超厚實)">`;
+        $('#soc-tip').innerText = SOC_DATA.staff.tips;
+    } else {
+        html = `<div style="font-size:13px;color:#999;margin-bottom:10px;text-align:left;">請選擇情境：</div>
+                <div class="tog-grp">
+                   <div class="tog-btn ${soc_state.hasPhoto?'act':''}" onclick="socTog('hasPhoto',true)">📸 有拍合照</div>
+                   <div class="tog-btn ${!soc_state.hasPhoto?'act':''}" onclick="socTog('hasPhoto',false)">📦 僅拍商品</div>
+                </div>
+                <div class="tog-grp" style="margin-bottom:20px">
+                   <div class="tog-btn ${soc_state.hasFeedback?'act':''}" onclick="socTog('hasFeedback',true)">💬 有感想</div>
+                   <div class="tog-btn ${!soc_state.hasFeedback?'act':''}" onclick="socTog('hasFeedback',false)">😶 無感想</div>
+                </div>
+                <input id="si-1" placeholder="售出商品名稱 (例: 復古檯燈)">
+                ${soc_state.hasFeedback ? '<input id="si-2" placeholder="客人說了什麼? (簡短)">' : ''}`;
+        $('#soc-tip').innerText = soc_state.hasPhoto ? SOC_DATA.story.tips_y : SOC_DATA.story.tips_n;
+    }
+    con.innerHTML = html;
+    $('#soc-tip').style.display = 'flex';
+}
+
+function socTog(k, v) { soc_state[k]=v; socRender(); }
+const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
+
+function socGen() {
+    const mode = $('#soc-mode').value;
+    const v1 = $('#si-1').value || "[商品]";
+    const v2 = $('#si-2') ? $('#si-2').value : "";
+    const extra = $('#si-custom').value.trim();
+    let txt = "";
+
+    if(mode === 'new') {
+        txt = `${SOC_DATA.new.title}\n\n${rnd(SOC_DATA.new.openers)}\n\n這次最想推薦給大家的是 👉 ${v1}\n\n它${v2 ? `真的超級適合「${v2}」` : "本人質感真的超級好"}！\n${rnd(SOC_DATA.new.vibes)}\n\n${extra ? `💡 小編補充：${extra}\n\n` : ""}重點是！買東西還能順便做公益，這種雙贏的好事哪裡找？\n\n${rnd(SOC_DATA.new.closings)}`;
+    } else if (mode === 'staff') {
+        txt = `${SOC_DATA.staff.title}\n\n${rnd(SOC_DATA.staff.intros)}\n\n因為這款 ${v1} 我自己真的超級想收編啦！！！😫\n\n${v2 ? `那個「${v2}」真的太戳中我了` : "質感好到讓人捨不得放手"}，\n${rnd(SOC_DATA.staff.struggles)}\n\n${extra ? `💡 注意喔：${extra}\n\n` : ""}${rnd(SOC_DATA.staff.closings)}`;
+    } else {
+        txt = `${SOC_DATA.story.title}\n\n${rnd(SOC_DATA.story.openers)}\n\n今天有位可愛的客人帶走了 ${v1} 🏠\n\n`;
+        
+        if(soc_state.hasFeedback) {
+            txt += `聽客人開心地說：「${v2 || "很喜歡！"}」\n${rnd(SOC_DATA.story.connectors)}\n\n`;
+        } else {
+            txt += `看著無貳小成員 ${v1} 陸續被帶走啦～\n期待下星期的新成員報到！\n\n`;
+        }
+        
+        if(extra) txt += `💡 ${extra}\n\n`;
+
+        if(soc_state.hasPhoto) {
+            txt += `感謝客人願意露臉合照，把這份喜悅分享給大家🥰（照片已獲授權）。`;
+        } else {
+            txt += `雖然客人害羞沒有入鏡，但這份惜物的心意我們都收到囉！`;
+        }
+        txt += `\n謝謝你們讓這些物品延續生命，這就是二手的浪漫吧 ✨`;
+    }
+    
+    txt += `\n\n──────────────\n用日常消費做公益，一起買好物，做好事。\n\n📍 地址：950臺東縣台東市市民航路793號\n🏷️ #無貳良品 #公益二手 #好物推薦 #台東探店`; 
+    
+    $('#soc-res').value = txt;
+}
+
+function socCopy() {
+    const t = $('#soc-res');
+    if(!t.value) return toast('warning', '請先產生文案');
+    t.select();
+    document.execCommand('copy');
+    toast('success', '已複製文案！');
+}
+// === SOCIAL TOOL LOGIC END ===
 
 // User Logic
 async function uLogin() {
@@ -299,12 +496,29 @@ function updLocal(ph, c, r, f=null) {
 async function hist(ph) {
   load(); const r = await api('getMemberHistory', {phone:ph}); load(false);
   if(!r.success) return Swal.fire('讀取失敗');
+
+  // Logic Check: Is Admin?
+  const isAdmin = !!STATE.pass;
+
   const h = r.history.length ? r.history.map(x=>`
     <div style="padding:12px 5px;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:14px;font-weight:500;color:${x.action.match(/加|贈|費/)?'var(--g)':x.action.match(/扣|兌/)?'var(--p)':'#333'}">${x.money?`$${x.money} `:''}${x.action}</div><div style="font-size:11px;color:#aaa">${x.date}</div></div>
-      <div style="font-size:11px;background:#f0f0f0;padding:2px 8px;border-radius:8px;color:#888">${x.staff}</div>
+      <div>
+        <div style="font-size:14px;font-weight:500;color:${x.action.match(/加|贈|費/)?'var(--g)':x.action.match(/扣|兌/)?'var(--p)':'#333'}">
+          ${x.money?`$${x.money} `:''}${x.action}
+        </div>
+        <div style="font-size:11px;color:#aaa">${x.date}</div>
+      </div>
+      <div style="font-size:11px;background:#f0f0f0;padding:2px 8px;border-radius:8px;color:#888">
+        ${isAdmin ? x.staff : '無貳良品'}
+      </div>
     </div>`).join('') : '<div style="color:#ccc;padding:20px;text-align:center">無紀錄</div>';
-  Swal.fire({title:'',html:`<div><div style="font-size:18px;font-weight:700;margin-bottom:15px">📜 歷史紀錄</div><div style="max-height:300px;overflow-y:auto;text-align:left;border-top:1px solid #eee">${h}</div></div>`,confirmButtonColor:'#EFC050',confirmButtonText:'關閉'});
+
+  Swal.fire({
+    title:'',
+    html:`<div><div style="font-size:18px;font-weight:700;margin-bottom:15px">📜 歷史紀錄</div><div style="max-height:300px;overflow-y:auto;text-align:left;border-top:1px solid #eee">${h}</div></div>`,
+    confirmButtonColor:'#EFC050',
+    confirmButtonText:'關閉'
+  });
 }
 
 async function reg() {
