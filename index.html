@@ -128,7 +128,7 @@
     .act-type-minus { color: #E57373; }
     .act-type-redeem { color: var(--brand-pink); }
 
-    /* 骨架屏動畫：讓灰色區塊閃爍，感覺像在呼吸 */
+    /* 骨架屏動畫 */
     @keyframes skeleton-loading {
       0% { background-color: #f0f0f0; }
       50% { background-color: #e0e0e0; }
@@ -136,7 +136,7 @@
     }
     .skeleton {
       animation: skeleton-loading 1.5s infinite;
-      color: transparent !important; /* 隱藏文字 */
+      color: transparent !important;
       background: #f0f0f0;
       border-radius: 8px;
       user-select: none;
@@ -290,7 +290,6 @@
       }
     }
     
-    // ★ 修正：全域載入器 (統一使用 Fun Loader)
     function showLoading() { startFunLoading(); }
     function hideLoading() { stopFunLoading(); }
     
@@ -363,7 +362,6 @@
       });
     }
 
-    // 改良版登入：骨架屏 + 瞬間切換
     async function userLogin() {
       let p = document.getElementById('homePhone').value.trim();
       if(!p) return Swal.fire('請輸入手機號碼');
@@ -530,7 +528,6 @@
     }
 
     function adminAction(phone, name, currentTotal, isFirstUsed, isBirthdayToday) {
-      // ★ 如果是壽星，點開就撒花並提示
       if(isBirthdayToday) {
           fireConfetti();
           Swal.fire({
@@ -552,7 +549,6 @@
       let bonusBtnText = isFirstUsed ? "🎁 首次消費 (+5) [已領取]" : "🎁 首次消費 (+5)";
       let bonusIcon = isFirstUsed ? "🔒" : "🎁";
       
-      // 在名字旁加生日圖示
       let nameDisplay = isBirthdayToday ? `${name} <span style="font-size:14px; color:#F7A8B8">🎂壽星</span>` : name;
 
       Swal.fire({
@@ -578,7 +574,7 @@
               </div>
 
               <div class="range-wrap">
-                <input type="range" id="rangeInput" min="0" max="20" value="1" oninput="syncVal(this.value)">
+                <input type="range" id="rangeInput" min="0" max="50" value="1" oninput="syncVal(this.value)">
               </div>
             </div>
 
@@ -624,20 +620,27 @@
        }
     }
 
+    // ★ 修改：移除點數上限 20 的限制
     window.calcPoints = function(money) {
       if(!money) { syncVal(0); return; } 
       let pts = Math.floor(money / 100);
-      if(pts > 20) pts = 20; 
+      // if(pts > 20) pts = 20; // 移除這行
       syncVal(pts);
     }
     
+    // ★ 修改：如果數值超過拉桿上限，自動撐開拉桿
     window.syncVal = function(val) { 
+      let slider = document.getElementById('rangeInput');
+      if(Number(val) > Number(slider.max)) {
+          slider.max = Number(val) + 10; // 給一點緩衝空間
+      }
       document.getElementById('numDisplay').innerText = val; 
-      document.getElementById('rangeInput').value = val;
+      slider.value = val;
     }
 
     window.doStampRange = async function(phone, multiplier) {
-      let val = Number(document.getElementById('rangeInput').value);
+      // ★ 修改：直接讀取數字顯示區的值，確保不會因為 Slider 限制而少算
+      let val = Number(document.getElementById('numDisplay').innerText);
       let moneyVal = document.getElementById('moneyInput').value; 
       let finalAmount = val * multiplier;
       let actionText = multiplier > 0 ? "增加" : "扣除";
@@ -691,12 +694,10 @@
           html = `<div class="hist-list">`;
           res.history.forEach(h => {
             let typeClass = '';
-            // 讓 "消費紀錄(+0)" 也顯示為綠色
             if(h.action.includes('蓋章') || h.action.includes('首次') || h.action.includes('消費') || h.action.includes('增加')) typeClass = 'act-type-plus';
             if(h.action.includes('扣點') || h.action.includes('扣除')) typeClass = 'act-type-minus';
             if(h.action.includes('兌換')) typeClass = 'act-type-redeem';
             
-            // 格式優化：消費$560 蓋章(+5)
             let displayAction = h.action;
             if(h.money && h.money > 0) {
                 if(displayAction.includes('消費紀錄')) {
@@ -739,7 +740,7 @@
         preConfirm: () => {
           const n = document.getElementById('regName').value.trim();
           const p = document.getElementById('regPhone').value.trim();
-          const b = document.getElementById('regBirthday').value; // 取得生日
+          const b = document.getElementById('regBirthday').value; 
           if(!n || !p || !b) { Swal.showValidationMessage('請填寫完整 (包含生日)'); return false; }
           if(!/^09\d{8}$/.test(p)) { Swal.showValidationMessage('手機格式錯誤'); return false; }
           return {name: n, phone: p, birthday: b};
@@ -749,7 +750,6 @@
       if(res.isConfirmed) {
         showLoading();
         const currentPass = isAdminMode ? GLOBAL_PASS : null;
-        // 傳送 birthday
         const r = await callApi('registerMember', { password: currentPass, name: res.value.name, phone: res.value.phone, birthday: res.value.birthday });
         hideLoading();
 
@@ -772,8 +772,8 @@
       let savedPass = sessionStorage.getItem('STAFF_PASS');
       if(savedPass) {
         GLOBAL_PASS = savedPass; 
-        showView('view-admin'); // 立即切換
-        renderAdminSkeleton();  // 顯示骨架
+        showView('view-admin'); 
+        renderAdminSkeleton();  
         
         startFunLoading();
         const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
