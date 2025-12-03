@@ -8,8 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    /* 樣式保持不變，為了版面整潔這裡省略 CSS，請直接用你上一版我給你的 CSS 即可 */
-    /* ... 請將上一篇回應的 <style>...</style> 內容完整貼在這裡 ... */
+    /* CSS 樣式保持不變 */
     :root { 
       --brand-yellow: #EFC050; --brand-green: #9CB071; --brand-pink: #F7A8B8;
       --bg-main: #FAFAFA; --text-dark: #555; 
@@ -243,6 +242,7 @@
 
   <script>
     // ★★★ 請替換成你部署 GAS 後得到的 Web App URL ★★★
+    // 這裡需要填入網址，不然 Zeabur 部署後會連不到後端
     const API_URL = "AKfycbwsfPMn54aqd3u-4SHkGmdfS-drw8MLNE-3lVq1XP-pCPSOW1ZxwDvTnd-85uQpuuc"; 
     
     // 音效設定
@@ -555,7 +555,7 @@
               </div>
 
               <div class="range-wrap">
-                <input type="range" id="rangeInput" min="0" max="50" value="1" oninput="syncVal(this.value)">
+                <input type="range" id="rangeInput" min="0" max="100" value="1" oninput="syncVal(this.value)">
               </div>
             </div>
 
@@ -598,7 +598,7 @@
        } else { playSound('error'); Swal.fire('發送失敗', r.msg, 'error'); }
     }
 
-    // ★ 移除上限邏輯
+    // ★ 無上限邏輯：直接轉換金額，不設檢查
     window.calcPoints = function(money) {
       if(!money) { syncVal(0); return; } 
       let pts = Math.floor(money / 100);
@@ -608,7 +608,7 @@
     // ★ 數值同步與拉桿自適應
     window.syncVal = function(val) { 
       let slider = document.getElementById('rangeInput');
-      // 如果數值超過拉桿當前上限，自動撐開拉桿
+      // 如果數值超過拉桿當前上限，自動撐開拉桿，實現無上限體驗
       if(Number(val) > Number(slider.max)) {
           slider.max = Number(val) + 10; 
       }
