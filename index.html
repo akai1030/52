@@ -142,7 +142,7 @@ async function api(act, p={}) {
 }
 
 let loadT = null;
-const msgs = ["資料讀取中...","請稍候...","連線中..."];
+const msgs = ["資料讀取中...","貓咪把水打翻了？...","你知道為什麼天空是綠色的嗎...","曾以為謎難懂的我...","貓咪肚子餓..."];
 function load(s=true) {
   $('#load').style.display = s ? 'flex' : 'none';
   if(s) { let i=0; if(loadT) clearInterval(loadT); loadT=setInterval(()=>{$('#load div:nth-child(2)').innerText=msgs[i++%3]}, 1500); }
