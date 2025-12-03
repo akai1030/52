@@ -8,6 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
+    /* 樣式保持不變，為了版面整潔這裡省略 CSS，請直接用你上一版我給你的 CSS 即可 */
+    /* ... 請將上一篇回應的 <style>...</style> 內容完整貼在這裡 ... */
     :root { 
       --brand-yellow: #EFC050; --brand-green: #9CB071; --brand-pink: #F7A8B8;
       --bg-main: #FAFAFA; --text-dark: #555; 
@@ -193,17 +195,20 @@
         <div style="background:#f5f5f5; color:#999; padding:4px 12px; border-radius:15px; font-size:12px;" id="uName">Name</div>
       </div>
       <div class="grid" id="uGrid"></div>
+      
       <div id="uFullMsg" style="text-align:center; margin-top:20px; display:none;">
         <div style="color:var(--brand-pink); font-weight:500; font-size:16px; margin-bottom:5px;">🎉 已集滿 10 點！</div>
         <div style="color:var(--brand-yellow); font-weight:bold; font-size:18px; letter-spacing:1px; border:2px dashed var(--brand-yellow); padding:10px; border-radius:15px; background:#fffdf5;">
           獲得 9 折兌換券
         </div>
       </div>
+      
       <div id="couponWallet" class="coupon-wallet">
         <div class="coupon-desc">✨ 可用優惠券 (可累積)</div>
         <div class="coupon-count"><span id="uCouponCount">0</span> 張</div>
         <button class="btn-use-coupon" onclick="userRedeem()">立即兌換折扣</button>
       </div>
+
       <div style="text-align:center; margin-top:30px; font-size:13px; color:#999;">
         歷史使用：<span id="uRedeem" style="color:var(--brand-yellow); font-weight:500; font-size:16px; cursor:pointer; text-decoration:underline;" onclick="openHistory(CURRENT_PHONE)">0</span> 張
       </div>
@@ -237,9 +242,10 @@
   </div>
 
   <script>
-    // ★ 已填入你的 ID
-    const API_URL = "https://script.google.com/macros/s/AKfycbwsfPMn54aqd3u-4SHkGmdfS-drw8MLNE-3lVq1XP-pCPSOW1ZxwDvTnd-85uQpuuc/exec"; 
+    // ★★★ 請替換成你部署 GAS 後得到的 Web App URL ★★★
+    const API_URL = "AKfycbwsfPMn54aqd3u-4SHkGmdfS-drw8MLNE-3lVq1XP-pCPSOW1ZxwDvTnd-85uQpuuc"; 
     
+    // 音效設定
     const SOUND_SUCCESS = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'); 
     const SOUND_REDEEM = new Audio('https://actions.google.com/sounds/v1/science_fiction/scifi_laser.ogg'); 
     const SOUND_ERROR = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); 
@@ -256,20 +262,21 @@
        confetti({ origin: { y: 0.7 } });
     }
 
+    // 全域變數
     let GLOBAL_PASS = ""; 
     let GLOBAL_STAFF_NAME = "";
     let ALL_MEMBERS = [];
     let CURRENT_PHONE = "";
     let POLLING_TIMER = null; 
 
-    // API 呼叫函式
+    // 通用 API 呼叫函式 (fetch)
     async function callApi(action, params = {}) {
       const payload = { action: action, params: params };
       try {
         const response = await fetch(API_URL, {
           method: "POST",
           body: JSON.stringify(payload),
-          headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, // 避免 OPTIONS 預檢
         });
         const result = await response.json();
         return result;
@@ -279,7 +286,7 @@
       }
     }
 
-    // 本地極速更新小幫手
+    // 更新本地資料 (假更新，讓 UI 馬上變，不用等輪詢)
     function updateLocalMember(phone, newPoints, newRedeemed, isFirstUsed = null) {
       let target = ALL_MEMBERS.find(m => m.phone === phone);
       if (target) {
@@ -290,15 +297,15 @@
       }
     }
     
+    // Loading 控制
     function showLoading() { startFunLoading(); }
     function hideLoading() { stopFunLoading(); }
-    
     function forceStopLoading() {
       if(POLLING_TIMER) clearInterval(POLLING_TIMER);
       GLOBAL_PASS = ""; hideLoading(); showView('view-home');
     }
 
-    // 隨機幹話 Loader
+    // 趣味 Loading 文字
     let FUN_LOADER_TIMER = null;
     const LOADING_MSGS = [
       "正在召喚雲端資料...",
@@ -307,8 +314,7 @@
       "正在計算您的優惠...",
       "稍等一下，貓咪擋在主機前...",
       "快到了，再忍耐一下...",
-      "正在幫您把點數擦亮...",
-      "無貳良品，品質保證..."
+      "正在幫您把點數擦亮..."
     ];
 
     function startFunLoading() {
@@ -328,12 +334,11 @@
       document.getElementById('loader').style.display = 'none';
     }
 
+    // 輪詢 (只在後台頁面且登入狀態下執行)
     function startPolling() {
       if(POLLING_TIMER) clearInterval(POLLING_TIMER);
       POLLING_TIMER = setInterval(async () => {
-        // 使用者模式不需頻繁輪詢
         if(document.getElementById('view-admin').classList.contains('active') && GLOBAL_PASS) {
-          // 後台模式才需要更新列表
           const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
           if(r.success) { ALL_MEMBERS = r.list; updateAdminUI(r.list, r.totalRedeemed); }
         }
@@ -362,6 +367,7 @@
       });
     }
 
+    // --- 使用者登入邏輯 ---
     async function userLogin() {
       let p = document.getElementById('homePhone').value.trim();
       if(!p) return Swal.fire('請輸入手機號碼');
@@ -369,35 +375,23 @@
       CURRENT_PHONE = p;
       showView('view-user'); // 瞬間切換
       
-      // 顯示骨架屏
+      // 骨架屏
       document.getElementById('uName').innerHTML = '<span class="skeleton skeleton-text" style="width: 80px;"></span>';
       document.getElementById('uRedeem').innerHTML = '<span class="skeleton skeleton-text" style="width: 20px;"></span>';
       document.getElementById('uCouponCount').innerText = '-';
-      
       let skeletonGrid = '';
       for(let i=0; i<10; i++) skeletonGrid += `<div class="stamp skeleton"></div>`;
       document.getElementById('uGrid').innerHTML = skeletonGrid;
       
-      document.getElementById('uFullMsg').style.display = 'none';
-      document.getElementById('couponWallet').style.display = 'none';
-
       startFunLoading(); 
-
       const res = await callApi('getMemberData', { phone: p });
-      
       stopFunLoading();
 
       if(res.success) {
         renderUserCard(res.name, res.current, res.redeemed);
-        // ★ 如果是壽星，撒花特效 + 彈窗
-        if(res.isBirthday) {
+        if(res.isBirthdayToday) {
             fireConfetti();
-            Swal.fire({
-                title: '🎂 生日快樂！',
-                text: '今天是您的生日，無貳良品祝您生日快樂！',
-                icon: 'success',
-                confirmButtonColor: '#F7A8B8'
-            });
+            Swal.fire({ title: '🎂 生日快樂！', text: '今天是您的生日，無貳良品祝您生日快樂！', icon: 'success', confirmButtonColor: '#F7A8B8' });
         }
       } else {
         Swal.fire({ icon: 'error', title: '找不到會員', text: '請先註冊會員喔！', confirmButtonText: '去註冊', confirmButtonColor: '#EFC050' }).then(r => { 
@@ -410,7 +404,6 @@
     function renderUserCard(name, currentTotal, redeemed) {
       document.getElementById('uName').innerText = name;
       document.getElementById('uRedeem').innerText = redeemed;
-      
       let fullCards = Math.floor(currentTotal / 10);
       let progress = currentTotal % 10;
       let html = '';
@@ -450,7 +443,7 @@
       }
     }
 
-    // 後台登入也加入骨架屏邏輯
+    // --- 後台登入邏輯 ---
     async function openAdminLogin() {
       const res = await Swal.fire({
         title: '工作夥伴登入', input: 'password', inputPlaceholder: '請輸入密碼', confirmButtonColor: '#9CB071'
@@ -458,11 +451,8 @@
 
       if(res.isConfirmed) {
         GLOBAL_PASS = res.value;
-        
-        // ★ 立即切換到 Admin 頁面，顯示骨架
         showView('view-admin');
         renderAdminSkeleton();
-        
         startFunLoading();
         const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
         stopFunLoading();
@@ -474,19 +464,16 @@
           updateAdminUI(r.list, r.totalRedeemed);
           startPolling(); 
         } else { 
-          showView('view-home'); // 失敗回首頁
+          showView('view-home');
           Swal.fire('登入失敗', r.msg, 'error'); 
         }
       }
     }
     
-    // ★ Admin 骨架屏
     function renderAdminSkeleton() {
         let box = document.getElementById('admGrid');
         let html = '';
-        for(let i=0; i<6; i++) {
-            html += `<div class="m-card skeleton" style="height:100px;"></div>`;
-        }
+        for(let i=0; i<6; i++) { html += `<div class="m-card skeleton" style="height:100px;"></div>`; }
         box.innerHTML = html;
         document.getElementById('staffNameDisplay').innerText = 'Loading...';
     }
@@ -506,7 +493,7 @@
         let progress = m.current % 10;
         let p = (progress/10)*100;
         let hasCouponClass = fullCards > 0 ? 'has-coupon' : '';
-        let bdayClass = m.isBirthdayToday ? 'is-birthday' : ''; // 壽星樣式
+        let bdayClass = m.isBirthdayToday ? 'is-birthday' : '';
         
         htmlBuffer += `
           <div class="m-card ${hasCouponClass} ${bdayClass}" onclick="adminAction('${m.phone}', '${m.name}', ${m.current}, ${m.isFirstUsed}, ${m.isBirthdayToday})">
@@ -527,16 +514,11 @@
       renderAdminGrid(res);
     }
 
+    // ★★★ 管理員操作面板 ★★★
     function adminAction(phone, name, currentTotal, isFirstUsed, isBirthdayToday) {
       if(isBirthdayToday) {
           fireConfetti();
-          Swal.fire({
-             title: `🎂 今天是 ${name} 生日！`,
-             text: '記得送小禮物喔！',
-             icon: 'success',
-             timer: 2000,
-             showConfirmButton: false
-          });
+          Swal.fire({ title: `🎂 今天是 ${name} 生日！`, text: '記得送小禮物喔！', icon: 'success', timer: 2000, showConfirmButton: false });
       }
 
       let fullCards = Math.floor(currentTotal / 10);
@@ -548,7 +530,6 @@
       let bonusBtnClass = isFirstUsed ? "btn-bonus used" : "btn-bonus";
       let bonusBtnText = isFirstUsed ? "🎁 首次消費 (+5) [已領取]" : "🎁 首次消費 (+5)";
       let bonusIcon = isFirstUsed ? "🔒" : "🎁";
-      
       let nameDisplay = isBirthdayToday ? `${name} <span style="font-size:14px; color:#F7A8B8">🎂壽星</span>` : name;
 
       Swal.fire({
@@ -591,6 +572,7 @@
       });
     }
 
+    // 首購禮邏輯
     window.handleFirstBonus = async function(phone, isUsed) {
       if (!isUsed) {
         callBonusApi(phone, false);
@@ -606,53 +588,44 @@
     }
 
     async function callBonusApi(phone, force) {
-       Swal.close(); 
-       showLoading();
+       Swal.close(); showLoading();
        const r = await callApi('giveFirstBonus', { password: GLOBAL_PASS, phone: phone, forceOverride: force });
        hideLoading();
-       
        if(r.success) {
          playSound('success');
          Swal.fire({ icon: 'success', title: `成功發送首購禮 (+5點)`, timer: 1500, showConfirmButton: false });
          updateLocalMember(phone, r.current, r.redeemed, true);
-       } else {
-         playSound('error'); Swal.fire('發送失敗', r.msg, 'error');
-       }
+       } else { playSound('error'); Swal.fire('發送失敗', r.msg, 'error'); }
     }
 
-    // ★ 修改：移除點數上限 20 的限制
+    // ★ 移除上限邏輯
     window.calcPoints = function(money) {
       if(!money) { syncVal(0); return; } 
       let pts = Math.floor(money / 100);
-      // if(pts > 20) pts = 20; // 移除這行
-      syncVal(pts);
+      syncVal(pts); // 直接傳入，不設上限
     }
     
-    // ★ 修改：如果數值超過拉桿上限，自動撐開拉桿
+    // ★ 數值同步與拉桿自適應
     window.syncVal = function(val) { 
       let slider = document.getElementById('rangeInput');
+      // 如果數值超過拉桿當前上限，自動撐開拉桿
       if(Number(val) > Number(slider.max)) {
-          slider.max = Number(val) + 10; // 給一點緩衝空間
+          slider.max = Number(val) + 10; 
       }
       document.getElementById('numDisplay').innerText = val; 
       slider.value = val;
     }
 
+    // 加減點數送出
     window.doStampRange = async function(phone, multiplier) {
-      // ★ 修改：直接讀取數字顯示區的值，確保不會因為 Slider 限制而少算
-      let val = Number(document.getElementById('numDisplay').innerText);
+      let val = Number(document.getElementById('numDisplay').innerText); // 直接讀文字確保準確
       let moneyVal = document.getElementById('moneyInput').value; 
       let finalAmount = val * multiplier;
       let actionText = multiplier > 0 ? "增加" : "扣除";
       
       Swal.close(); showLoading();
       
-      const r = await callApi('addStamp', { 
-        password: GLOBAL_PASS, 
-        phone: phone, 
-        amount: finalAmount, 
-        money: moneyVal 
-      });
+      const r = await callApi('addStamp', { password: GLOBAL_PASS, phone: phone, amount: finalAmount, money: moneyVal });
       
       hideLoading();
 
@@ -665,6 +638,7 @@
       }
     }
 
+    // 兌換邏輯
     window.doRedeem = async function(phone) {
       Swal.close();
       const result = await Swal.fire({ title: '確認兌換？', text: '將扣除 10 點', icon: 'warning', showCancelButton: true, confirmButtonText: '確認', confirmButtonColor: '#d33' });
@@ -681,6 +655,7 @@
       }
     }
 
+    // 歷史紀錄
     window.openHistory = async function(phone) {
       showLoading();
       const res = await callApi('getMemberHistory', { phone: phone });
@@ -722,6 +697,7 @@
       } else { Swal.fire('讀取失敗', res.msg, 'error'); }
     }
 
+    // 註冊
     async function openRegister() {
       let isAdminMode = document.getElementById('view-admin').classList.contains('active');
       const res = await Swal.fire({
@@ -729,10 +705,8 @@
         html: `
             <div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">姓名</div>
             <input id="regName" placeholder="王小明" style="width:95%; margin:0 auto 15px auto; display:block;">
-            
             <div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">手機</div>
             <input id="regPhone" type="tel" placeholder="09xxxxxxxx" style="width:95%; margin:0 auto 15px auto; display:block;" maxlength="10">
-            
             <div style="text-align:left; font-size:14px; color:#888; margin-bottom:5px; margin-left:10px;">生日</div>
             <input id="regBirthday" type="date" style="width:95%; margin:0 auto 15px auto; display:block;">
         `,
@@ -765,6 +739,7 @@
 
     function logoutAdmin() { GLOBAL_PASS = ""; sessionStorage.removeItem('STAFF_PASS'); if(POLLING_TIMER) clearInterval(POLLING_TIMER); showView('view-home'); }
     
+    // 初始化
     window.onload = async function() {
       const urlParams = new URLSearchParams(window.location.search);
       const p = urlParams.get('phone');
@@ -774,11 +749,9 @@
         GLOBAL_PASS = savedPass; 
         showView('view-admin'); 
         renderAdminSkeleton();  
-        
         startFunLoading();
         const r = await callApi('adminLoginAndGetData', { password: GLOBAL_PASS });
         stopFunLoading();
-        
         if(r.success) { ALL_MEMBERS = r.list; GLOBAL_STAFF_NAME = r.staffName; updateAdminUI(r.list, r.totalRedeemed); startPolling(); } 
         else { sessionStorage.removeItem('STAFF_PASS'); showView('view-home'); }
       }
