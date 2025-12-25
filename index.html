@@ -238,7 +238,7 @@ function stopLoad(force) { if(STATE.timer) clearInterval(STATE.timer); if(force)
 
 function route(id) { document.querySelectorAll('.view').forEach(e=>e.classList.remove('active')); $(`#${id}`).classList.add('active'); window.scrollTo(0,0); }
 
-function rules() { Swal.fire({title:'規則說明',html:`<div style="text-align:left;font-size:14px;color:#555">1. 消費 $100 集 1 點<br>2. 集滿 10 點換 9 折券<br>3. 首次消費贈 5 點</div>`,confirmButtonColor:'#EFC050'}); }
+function rules() { Swal.fire({title:'規則說明',html:`<div style="text-align:left;font-size:14px;color:#555">1. 消費 $100 集 1 點<br>2. 集滿 10 點換優惠(依現場說明為主)<br>3. 首次消費贈 5 點</div>`,confirmButtonColor:'#EFC050'}); }
 
 // === SOCIAL TOOL LOGIC START ===
 const SOC_DATA = {
@@ -400,7 +400,7 @@ function socCopy() {
 // User Logic
 async function uLogin() {
   const p = $('#hp').value.trim();
-  if(!p) return Swal.fire('請輸入手機');
+  if(!p) return Swal.fire('請在格中輸入手機號碼');
   STATE.curr = p; route('v-user');
   $('#un').innerHTML = '<span class="skel sk-t" style="width:80px"></span>';
   $('#ug').innerHTML = Array(10).fill('<div class="stp skel"></div>').join('');
